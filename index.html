@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase RLS & CSV Testumgebung</title>
+    <!-- Tailwind CSS für ein modernes UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS CDN (Version 2) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 p-4 shadow-md">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h1 class="text-xl font-bold text-emerald-400 flex items-center gap-2">
+                ⚡ Supabase CSV & RLS Tester
+            </h1>
+            <div id="userStatus" class="text-sm text-gray-400">
+                Status: <span class="text-red-400 font-semibold">Nicht eingeloggt</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl w-full mx-auto p-4 sm:p-6 flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Linke Spalte: Konfiguration & Auth -->
+        <div class="lg:col-span-1 space-y-6">
+
+            <!-- 1. Supabase Verbindungseinstellungen -->
+            <div class="bg-gray-800 p-5 rounded-lg border border-gray-700 shadow-sm">
+                <h2 class="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">1. Verbindung</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Project URL</label>
+                        <input id="supabaseUrl" type="text" placeholder="https://your-project.supabase.co" 
+                               class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Anon / Publishable Key</label>
+                        <input id="supabaseKey" type="password" placeholder="your-anon-key" 
+                               class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <button id="btnConnect" onclick="initializeSupabase()" 
+                            class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded text-sm transition shadow">
+                        Verbindung herstellen & testen
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Authentication (Login / Register / Google) -->
+            <div id="authSection" class="bg-gray-800 p-5 rounded-lg border border-gray-700 shadow-sm opacity-50 pointer-events-none transition-opacity duration-300">
+                <h2 class="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">2. Authentifizierung</h2>
+
+                <!-- Login / SignUp Form -->
+                <div id="authForm" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">E-Mail</label>
+                        <input id="authEmail" type="email" placeholder="test@example.com" 
+                               class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Passwort</label>
+                        <input id="authPassword" type="password" placeholder="••••••••" 
+                               class="w-full bg-gray-900 border border-gray-700 rounded p-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button onclick="handleLogin()" class="bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-sm font-semibold transition">
+                            Einloggen
+                        </button>
+                        <button onclick="handleSignUp()" class="bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-sm font-semibold transition">
+                            Registrieren
+                        </button>
+                    </div>
+
+                    <!-- Trennlinie -->
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-gray-700"></div>
+                        <span class="flex-shrink mx-3 text-gray-500 text-xs uppercase font-semibold">oder</span>
+                        <div class="flex-grow border-t border-gray-700"></div>
+                    </div>
+
+                    <!-- Google OAuth Login -->
+                    <button onclick="handleGoogleLogin()" class="w-full bg-white hover:bg-gray-100 text-gray-900 py-2 rounded text-sm font-bold transition flex items-center justify-center gap-2 shadow">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        Mit Google anmelden
+                    </button>
+                </div>
+
+                <!-- Logged In State -->
+                <div id="loggedInState" class="hidden space-y-3 text-center">
+                    <p class="text-sm text-gray-300">Eingeloggt als:</p>
+                    <p id="currentUserEmail" class="text-emerald-400 font-mono text-sm break-all font-semibold"></p>
+                    <button onclick="handleLogout()" class="w-full bg-red-600/80 hover:bg-red-500 text-white py-2 rounded text-sm font-semibold transition mt-2">
+                        Abmelden
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rechte Spalte: CSV Aktionen & Anzeige -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- 3. RLS CSV-Daten abrufen -->
+            <div id="csvSection" class="bg-gray-800 p-5 rounded-lg border border-gray-700 shadow-sm opacity-50 pointer-events-none transition-opacity duration-300 flex flex-col h-full">
+                <h2 class="text-lg font-semibold mb-4 text-gray-200 border-b border-gray-700 pb-2">3. CSV-Datenzugriff unter RLS</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <!-- Option A: Storage -->
+                    <div class="border border-gray-700 rounded p-4 bg-gray-900/50">
+                        <h3 class="text-sm font-bold text-emerald-400 mb-2">Option A: Supabase Storage (Bucket)</h3>
+                        <p class="text-xs text-gray-400 mb-3">Lade eine physische CSV-Datei aus einem privaten Bucket.</p>
+                        <div class="space-y-2">
+                            <input id="bucketName" type="text" placeholder="Bucket Name (z.B. csv-files)" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-xs">
+                            <input id="filePath" type="text" placeholder="Dateipfad (z.B. daten.csv)" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-xs">
+                            <button onclick="fetchFromStorage()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-2 rounded font-bold transition">
+                                Aus Storage laden
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Option B: Database -->
+                    <div class="border border-gray-700 rounded p-4 bg-gray-900/50">
+                        <h3 class="text-sm font-bold text-blue-400 mb-2">Option B: Datenbank (Tabelle als CSV)</h3>
+                        <p class="text-xs text-gray-400 mb-3">Frage eine geschützte SQL-Tabelle direkt im CSV-Format ab.</p>
+                        <div class="space-y-2">
+                            <input id="tableName" type="text" placeholder="Tabellenname (z.B. TestData)" class="w-full bg-gray-900 border border-gray-700 rounded p-1.5 text-xs">
+                            <div class="h-[34px]"></div> <!-- Symmetrie-Platzhalter -->
+                            <button onclick="fetchFromDatabase()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs py-2 rounded font-bold transition">
+                                Als CSV abfragen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ergebnisanzeige / Logs -->
+                <div class="flex-grow flex flex-col min-h-[300px]">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Ergebnis / Konsolen-Logs:</span>
+                        <button onclick="clearLogs()" class="text-xs text-gray-500 hover:text-gray-300 underline">Leeren</button>
+                    </div>
+                    <div id="outputContainer" class="flex-grow bg-gray-950 border border-gray-700 rounded p-3 font-mono text-xs overflow-auto max-h-[400px]">
+                        <span class="text-gray-600">// Warte auf Aktionen...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 border-t border-gray-700 p-4 text-center text-xs text-gray-500">
+        Supabase RLS & CSV Integration • Lokaler Testmodus
+    </footer>
+
+    <!-- Frontend Logik -->
+    <script>
+        let supabaseClient = null;
+
+        // Hilfsfunktion zum Loggen im UI
+        function log(message, type = 'info') {
+            const container = document.getElementById('outputContainer');
+            if (container.innerHTML.includes('// Warte auf Aktionen...')) {
+                container.innerHTML = '';
+            }
+            const time = new Date().toLocaleTimeString();
+            let color = 'text-gray-300';
+            if (type === 'success') color = 'text-emerald-400 font-semibold';
+            if (type === 'error') color = 'text-red-400 font-semibold';
+            if (type === 'warn') color = 'text-yellow-400';
+
+            container.innerHTML += `<div class="${color} mb-1">[${time}] ${message}</div>`;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('outputContainer').innerHTML = '<span class="text-gray-600">// Logs geleert.</span>';
+        }
+
+        // Lokale Speicherdaten beim Laden einlesen (Komfortfunktion beim Testen)
+        window.onload = () => {
+            const savedUrl = localStorage.getItem('sb_test_url');
+            const savedKey = localStorage.getItem('sb_test_key');
+            if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
+            if (savedKey) document.getElementById('supabaseKey').value = savedKey;
+
+            // Falls bereits Zugangsdaten gespeichert waren und wir von einem OAuth-Redirect zurückkommen,
+            // versuchen wir sofort die Re-Initialisierung, damit die Session direkt abgefangen wird.
+            if (savedUrl && savedKey) {
+                initializeSupabase(true); // silent init
+            }
+        };
+
+        // 1. Supabase initialisieren & aktive Verbindung prüfen
+        async function initializeSupabase(silent = false) {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+
+            if (!url || !key) {
+                if (!silent) alert('Bitte trage sowohl die Supabase URL als auch den Anon-Key ein.');
+                return;
+            }
+
+            // Lokale Speicherung für schnelles Testen
+            localStorage.setItem('sb_test_url', url);
+            localStorage.setItem('sb_test_key', key);
+
+            try {
+                supabaseClient = supabase.createClient(url, key);
+                if (!silent) log('Supabase-Instanz lokal erstellt. Teste Verbindung zum Server...', 'warn');
+
+                // Dummy auth check triggert echtes fetch zur Domain
+                const { error } = await supabaseClient.auth.signInWithPassword({
+                    email: 'connection_test_dummy_check@example.com',
+                    password: 'wrong_password_on_purpose'
+                });
+
+                if (error && error.message.includes('Failed to fetch')) {
+                    throw new Error('Netzwerk-Verbindungsfehler (Failed to fetch).');
+                }
+
+                if (!silent) log('Supabase Client erfolgreich initialisiert!', 'success');
+
+                // Auth-Sektion freischalten
+                document.getElementById('authSection').classList.remove('opacity-50', 'pointer-events-none');
+
+                // Auth-State Änderungen überwachen (Wichtig auch nach Google OAuth Redirect!)
+                supabaseClient.auth.onAuthStateChange((event, session) => {
+                    log(`Auth-Event gefeuert: ${event}`, 'warn');
+                    updateAuthUI(session);
+                });
+
+                // Aktuelle Session direkt prüfen
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                updateAuthUI(session);
+
+            } catch (err) {
+                log('Fehler bei der Verbindung: ' + err.message, 'error');
+                log('👉 TROUBLESHOOTING-CHECKLISTE bei "Failed to fetch":', 'warn');
+                log('1. Werbeblocker (uBlock, Adblock Plus, Pi-hole) blockieren oft Supabase-Anfragen. Deaktiviere sie für localhost!', 'gray');
+                log('2. Nutzt du ein Firmen-VPN? Dies blockiert oft ungesicherte Verbindungen zu externen Datenbanken.', 'gray');
+                log('3. Nutzt du ein HTTPS-Zertifikat? Manche Browser blockieren HTTP-zu-HTTPS API-Aufrufe.', 'gray');
+            }
+        }
+
+        // Auth UI aktualisieren
+        function updateAuthUI(session) {
+            const authForm = document.getElementById('authForm');
+            const loggedInState = document.getElementById('loggedInState');
+            const userStatus = document.getElementById('userStatus');
+            const csvSection = document.getElementById('csvSection');
+
+            if (session && session.user) {
+                // Eingeloggt
+                authForm.classList.add('hidden');
+                loggedInState.classList.remove('hidden');
+                document.getElementById('currentUserEmail').innerText = session.user.email;
+                userStatus.innerHTML = `Status: <span class="text-emerald-400 font-bold">Eingeloggt (${session.user.app_metadata.provider || 'email'})</span>`;
+
+                // CSV Zugriff aktivieren
+                csvSection.classList.remove('opacity-50', 'pointer-events-none');
+                log(`Eingeloggt als ${session.user.email}. CSV-Optionen sind jetzt freigeschaltet!`, 'success');
+            } else {
+                // Nicht eingeloggt
+                authForm.classList.remove('hidden');
+                loggedInState.classList.add('hidden');
+                userStatus.innerHTML = `Status: <span class="text-red-400 font-semibold">Nicht eingeloggt</span>`;
+
+                // CSV Zugriff sperren
+                csvSection.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        // Registrierung (E-Mail)
+        async function handleSignUp() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+
+            if (!email || !password) {
+                log('Bitte E-Mail und Passwort eingeben.', 'error');
+                return;
+            }
+
+            log(`Versuche Registrierung für: ${email}...`);
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+
+            if (error) {
+                log(`Registrierungsfehler: ${error.message}`, 'error');
+            } else {
+                if (data.session === null) {
+                    log('Registrierung erfolgreich initiiert! Bitte prüfe dein Postfach auf die Bestätigungs-E-Mail.', 'success');
+                } else {
+                    log('Registrierung und automatischer Login erfolgreich!', 'success');
+                }
+            }
+        }
+
+        // Login (E-Mail)
+        async function handleLogin() {
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+
+            if (!email || !password) {
+                log('Bitte E-Mail und Passwort eingeben.', 'error');
+                return;
+            }
+
+            log(`Versuche Login für: ${email}...`);
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                log(`Login fehlgeschlagen: ${error.message}`, 'error');
+            } else {
+                log('Erfolgreich angemeldet!', 'success');
+            }
+        }
+
+        // GOOGLE OAUTH LOGIN
+        async function handleGoogleLogin() {
+            if (!supabaseClient) {
+                log('Bitte stelle zuerst eine Verbindung zu deiner Supabase-Instanz her!', 'error');
+                return;
+            }
+
+            // Protokoll prüfen (Google verbietet "file://")
+            if (window.location.protocol === 'file:') {
+                log('❌ FEHLER: Google OAuth erlaubt keine "file://"-Protokolle.', 'error');
+                log('👉 Du MUSST diese HTML-Datei über einen lokalen Server ausführen (z.B. http://localhost:5500 via VS Code Live Server).', 'warn');
+                alert('Fehler: Google Login funktioniert nicht, wenn die HTML-Datei per Doppelklick geöffnet wurde. Nutze einen lokalen Server!');
+                return;
+            }
+
+            log('Leite zu Google OAuth-Schnittstelle weiter...', 'warn');
+
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    // Leitet den Nutzer nach erfolgreicher Anmeldung exakt auf diese Seite zurück
+                    redirectTo: window.location.origin + window.location.pathname
+                }
+            });
+
+            if (error) {
+                log(`Google-Verbindung fehlgeschlagen: ${error.message}`, 'error');
+            }
+        }
+
+        // Logout
+        async function handleLogout() {
+            log('Versuche Abmeldung...');
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) {
+                log(`Fehler beim Logout: ${error.message}`, 'error');
+            } else {
+                log('Erfolgreich abgemeldet.', 'success');
+                clearLogs();
+            }
+        }
+
+        // OPTION A: CSV aus Storage (Bucket) holen
+        async function fetchFromStorage() {
+            const bucket = document.getElementById('bucketName').value.trim();
+            const path = document.getElementById('filePath').value.trim();
+
+            if (!bucket || !path) {
+                log('Fehler: Bucket-Name und Dateipfad müssen angegeben werden.', 'error');
+                return;
+            }
+
+            log(`Lade Datei "${path}" aus Bucket "${bucket}"...`);
+
+            const { data, error } = await supabaseClient.storage.from(bucket).download(path);
+
+            if (error) {
+                log(`Storage-Fehler (RLS blockiert evtl.): ${error.message}`, 'error');
+            } else {
+                log('Datei erfolgreich heruntergeladen!', 'success');
+                const text = await data.text();
+                log('--- DATEIINHALT START ---', 'warn');
+                log(text);
+                log('--- DATEIINHALT ENDE ---', 'warn');
+            }
+        }
+
+        // OPTION B: Tabelle als CSV abfragen
+        async function fetchFromDatabase() {
+            const table = document.getElementById('tableName').value.trim();
+
+            if (!table) {
+                log('Fehler: Bitte einen Tabellennamen angeben.', 'error');
+                return;
+            }
+
+            log(`Frage Tabelle "${table}" an und konvertiere zu CSV...`);
+
+            const { data, error } = await supabaseClient
+                .from(table)
+                .select('*')
+                .csv();
+
+            if (error) {
+                log(`Datenbankfehler (RLS blockiert evtl.): ${error.message}`, 'error');
+            } else {
+                log('Daten erfolgreich als CSV empfangen!', 'success');
+                log('--- CSV DATEN START ---', 'warn');
+                log(data);
+                log('--- CSV DATEN ENDE ---', 'warn');
+            }
+        }
+    </script>
+</body>
+</html>
