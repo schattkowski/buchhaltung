@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImmoBook - Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .view { display: none; }
+        .view.active { display: block; }
+        .nav-btn.active { border-bottom: 3px solid #10b981; color: white; }
+        /* Verhindert Flackern beim Laden */
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen flex flex-col font-sans opacity-0 transition-opacity duration-300" id="body-content">
+
+    <!-- Navigation -->
+    <header class="bg-gray-800 border-b border-gray-700 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-4">
+                    <span class="text-emerald-400 font-bold text-xl">ImmoBook</span>
+                    <nav class="hidden md:flex space-x-4">
+                        <button onclick="zeigeAnsicht('form')" class="nav-btn active px-3 py-2 text-sm font-medium text-gray-300 hover:text-white" id="nav-form">Kosten</button>
+                        <button onclick="zeigeAnsicht('income')" class="nav-btn px-3 py-2 text-sm font-medium text-gray-300 hover:text-white" id="nav-income">Einnahmen</button>
+                        <button onclick="zeigeAnsicht('dashboard')" class="nav-btn px-3 py-2 text-sm font-medium text-gray-300 hover:text-white" id="nav-dashboard">Dashboard</button>
+                    </nav>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="syncToSupabase()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2">
+                        <span>☁️ Sync CSV</span>
+                    </button>
+                    <span id="userDisplay" class="text-xs text-gray-400 hidden sm:inline"></span>
+                    <button onclick="handleLogout()" class="text-red-400 hover:text-red-300 text-sm font-semibold">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 flex-grow">
+        <!-- Views analog zu app.html ... -->
+        <div id="view-form" class="view active space-y-6">
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-lg">
+                <h2 class="text-2xl font-bold mb-6">Neue Kosten erfassen</h2>
+                <form id="expense-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400">Titel</label>
+                            <input type="text" id="titel" required class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400">Betrag (€)</label>
+                            <input type="number" id="betrag" step="0.01" required class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400">Datum</label>
+                            <input type="date" id="datum" required class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-1">
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400">Kategorie</label>
+                            <select id="kategorie" class="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-1 text-white">
+                                <option>Nebenkosten</option>
+                                <option>Handwerker/Reparatur</option>
+                                <option>Versicherung</option>
+                                <option>Sonstiges</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400">Objekt</label>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <label class="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded cursor-pointer hover:bg-emerald-600 transition">
+                                    <input type="checkbox" name="objekt" value="Haus" class="hidden"> <span>Haus</span>
+                                </label>
+                                <label class="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded cursor-pointer hover:bg-emerald-600 transition">
+                                    <input type="checkbox" name="objekt" value="App1" class="hidden"> <span>App1</span>
+                                </label>
+                                <label class="flex items-center space-x-2 bg-gray-700 px-3 py-1 rounded cursor-pointer hover:bg-emerald-600 transition">
+                                    <input type="checkbox" name="objekt" value="App2" class="hidden"> <span>App2</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="md:col-span-2">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg shadow-lg transition">Eintrag speichern</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="view-income" class="view space-y-6">
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <h2 class="text-2xl font-bold mb-6">Neue Einnahme</h2>
+                <form id="income-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="number" id="income-betrag" placeholder="Betrag (€)" step="0.01" required class="bg-gray-900 border border-gray-700 rounded p-2">
+                        <input type="date" id="income-datum" required class="bg-gray-900 border border-gray-700 rounded p-2">
+                        <input type="text" id="income-beschreibung" placeholder="Beschreibung" class="md:col-span-2 bg-gray-900 border border-gray-700 rounded p-2">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition">Speichern</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="view-dashboard" class="view space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-800 p-6 rounded-lg border-l-4 border-emerald-500 shadow">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase">Gesamtausgaben</h3>
+                    <p id="kpi-total" class="text-3xl font-bold mt-2">0.00 €</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg border-l-4 border-blue-500 shadow">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase">Gesamteinnahmen</h3>
+                    <p id="kpi-income" class="text-3xl font-bold mt-2">0.00 €</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg border-l-4 border-yellow-500 shadow">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase">Sync Status</h3>
+                    <p id="sync-status" class="text-sm font-mono mt-2 text-gray-400 italic">Bereit</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 h-[300px]">
+                    <canvas id="kostenChart"></canvas>
+                </div>
+                <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 overflow-auto max-h-[300px]">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-900 sticky top-0">
+                            <tr><th class="p-2">Datum</th><th class="p-2">Titel</th><th class="p-2">Betrag</th></tr>
+                        </thead>
+                        <tbody id="expense-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const SB_URL = "https://ebhyuxpumgtxneolksur.supabase.co";
+        const SB_KEY = "sb_publishable_uKfOIinQ9EdNd8wlJlXigw_tesN18hx";
+        let supabaseClient = null;
+        let alleAusgaben = JSON.parse(localStorage.getItem('alleAusgaben')) || [];
+        let alleEinnahmen = JSON.parse(localStorage.getItem('alleEinnahmen')) || [];
+        let barChartObj = null;
+
+        // --- SICHERHEITS-CHECK (VOR ALLEM ANDEREN) ---
+        window.onload = async () => {
+            supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+            
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            
+            if (error || !session) {
+                console.log("Nicht eingeloggt! Umleitung zum Login...");
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Wenn eingeloggt, App anzeigen
+            document.getElementById('body-content').classList.remove('opacity-0');
+            document.getElementById('userDisplay').innerText = session.user.email;
+            updateDashboard();
+
+            // Auth State überwachen (Logout-Erkennung)
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_OUT') window.location.href = 'index.html';
+            });
+        };
+
+        // UI Helpers
+        function zeigeAnsicht(ansicht) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`view-${ansicht}`).classList.add('active');
+            document.getElementById(`nav-${ansicht}`)?.classList.add('active');
+            if (ansicht === 'dashboard') updateDashboard();
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+        }
+
+        // --- BUCHFÜHRUNGSLOGIK ---
+        document.getElementById('expense-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const objekte = Array.from(document.querySelectorAll('input[name="objekt"]:checked')).map(cb => cb.value);
+            const entry = {
+                id: Date.now(),
+                titel: document.getElementById('titel').value,
+                betrag: parseFloat(document.getElementById('betrag').value),
+                datum: document.getElementById('datum').value,
+                kategorie: document.getElementById('kategorie').value,
+                objekt: objekte.join(', ')
+            };
+            alleAusgaben.push(entry);
+            localStorage.setItem('alleAusgaben', JSON.stringify(alleAusgaben));
+            e.target.reset();
+            alert('Gespeichert!');
+        });
+
+        document.getElementById('income-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const entry = {
+                id: Date.now(),
+                betrag: parseFloat(document.getElementById('income-betrag').value),
+                datum: document.getElementById('income-datum').value,
+                beschreibung: document.getElementById('income-beschreibung').value
+            };
+            alleEinnahmen.push(entry);
+            localStorage.setItem('alleEinnahmen', JSON.stringify(alleEinnahmen));
+            e.target.reset();
+            alert('Einnahme gespeichert!');
+        });
+
+        function updateDashboard() {
+            const totalExp = alleAusgaben.reduce((sum, e) => sum + e.betrag, 0);
+            const totalInc = alleEinnahmen.reduce((sum, e) => sum + e.betrag, 0);
+            document.getElementById('kpi-total').innerText = totalExp.toFixed(2) + ' €';
+            document.getElementById('kpi-income').innerText = totalInc.toFixed(2) + ' €';
+
+            const tbody = document.getElementById('expense-table-body');
+            tbody.innerHTML = alleAusgaben.slice(-10).reverse().map(e => `
+                <tr class="border-b border-gray-700 hover:bg-gray-700/50">
+                    <td class="p-2 text-xs">${e.datum}</td>
+                    <td class="p-2 font-medium">${e.titel}</td>
+                    <td class="p-2 text-emerald-400">${e.betrag.toFixed(2)} €</td>
+                </tr>
+            `).join('');
+
+            const ctx = document.getElementById('kostenChart').getContext('2d');
+            const dataMap = {};
+            alleAusgaben.forEach(e => { dataMap[e.kategorie] = (dataMap[e.kategorie] || 0) + e.betrag; });
+
+            if (barChartObj) barChartObj.destroy();
+            barChartObj = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dataMap),
+                    datasets: [{ label: 'Ausgaben nach Kategorie', data: Object.values(dataMap), backgroundColor: '#10b981' }]
+                },
+                options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#374151' } } } }
+            });
+        }
+
+        async function syncToSupabase() {
+            if (!supabaseClient) return;
+            const headers = ['ID', 'Datum', 'Titel', 'Betrag', 'Kategorie', 'Objekt'];
+            const rows = alleAusgaben.map(e => [e.id, e.datum, `"${e.titel}"`, e.betrag, e.kategorie, `"${e.objekt}"`]);
+            const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const fileName = `buchfuehrung_${Date.now()}.csv`;
+            
+            document.getElementById('sync-status').innerText = 'Lade hoch...';
+            const { error } = await supabaseClient.storage.from('buchungen').upload(fileName, blob);
+
+            if (error) {
+                alert('Fehler beim Upload: ' + error.message);
+                document.getElementById('sync-status').innerText = 'Fehler';
+            } else {
+                alert('Daten erfolgreich als CSV gespeichert!');
+                document.getElementById('sync-status').innerText = 'Sync OK';
+            }
+        }
+    </script>
+</body>
+</html>
