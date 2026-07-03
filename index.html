@@ -85,10 +85,18 @@
                 alert('Google Login funktioniert nur über einen Webserver.');
                 return;
             }
-            await supabaseClient.auth.signInWithOAuth({
+            
+            // Ermittelt die aktuelle URL ohne Query-Parameter für den Redirect
+            const redirectUrl = window.location.origin + window.location.pathname;
+            console.log("Redirecting to:", redirectUrl);
+
+            const { error } = await supabaseClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin + window.location.pathname }
+                options: { 
+                    redirectTo: redirectUrl 
+                }
             });
+            if (error) alert("Google Login Fehler: " + error.message);
         }
     </script>
 </body>
