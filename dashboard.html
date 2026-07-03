@@ -3,50 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ImmoBook - Pro Dashboard</title>
-    <!-- Tailwind CSS für Basis-Styles -->
+    <title>Campo-Buchhaltung - Cloud Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
-        body { background-color: #f0f2f5; color: #333; }
-        .navbar { background-color: #2c3e50; display: flex; flex-wrap: wrap; justify-content: center; padding: 10px 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .nav-btn { background-color: transparent; color: #bdc3c7; border: none; padding: 15px 20px; font-size: 16px; font-weight: bold; cursor: pointer; transition: color 0.3s; border-bottom: 3px solid transparent; }
-        .nav-btn:hover { color: white; }
+        body { background-color: #f0f2f5; color: #333; font-family: sans-serif; }
+        .navbar { background-color: #2c3e50; display: flex; flex-wrap: wrap; justify-content: center; padding: 10px 0; }
+        .nav-btn { background-color: transparent; color: #bdc3c7; border: none; padding: 15px 20px; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.3s; }
         .nav-btn.active { color: white; border-bottom: 3px solid #27ae60; }
-
-        .container-custom { max-width: 1200px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .container-custom { max-width: 1200px; margin: 20px auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .view { display: none; }
         .view.active { display: block; }
-
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
         .full-width { grid-column: 1 / -1; }
-        label.main-label { font-weight: bold; margin-bottom: 8px; color: #34495e; display: block; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; color: #333; }
-        
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; }
-        .checkbox-group input[type="checkbox"] { display: none; }
-        .checkbox-group label { padding: 10px 16px; border: 2px solid #ccc; border-radius: 8px; background-color: #f9f9f9; cursor: pointer; font-weight: bold; user-select: none; color: #333; }
-        .checkbox-group input[type="checkbox"]:checked + label { background-color: #27ae60; color: white; border-color: #27ae60; }
-
-        .submit-btn { background-color: #27ae60; color: white; border: none; padding: 14px 20px; font-size: 18px; font-weight: bold; border-radius: 4px; cursor: pointer; width: 100%; }
-        .submit-btn:hover { background-color: #219150; }
-        
-        .filter-bar { display: flex; gap: 15px; background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 25px; align-items: center; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .kpi-card { background: #fff; border-left: 5px solid #3498db; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .kpi-card.green { border-color: #27ae60; }
-        .kpi-card.orange { border-color: #f39c12; }
-        .kpi-card h3 { margin: 0 0 10px 0; font-size: 12px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; }
-        .kpi-value { font-size: 24px; font-weight: bold; color: #2c3e50; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; color: #333; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ecf0f1; }
-        th { background-color: #2c3e50; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; color: #34495e; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .checkbox-group input { display: none; }
+        .checkbox-group label { padding: 8px 12px; border: 2px solid #ccc; border-radius: 6px; cursor: pointer; background: #f9f9f9; user-select: none; }
+        .checkbox-group input:checked + label { background: #27ae60; color: white; border-color: #27ae60; }
+        .submit-btn { background: #27ae60; color: white; padding: 12px; font-weight: bold; border-radius: 4px; width: 100%; cursor: pointer; border: none; transition: 0.2s; }
+        .submit-btn:hover { background: #219150; }
+        .edit-btn { background: #f39c12; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #2c3e50; color: white; }
+        tr:hover { background-color: #f8f9fa; }
     </style>
 </head>
 <body class="opacity-0 transition-opacity duration-300" id="body-content">
@@ -57,309 +40,361 @@
         <button class="nav-btn" id="nav-hours" onclick="zeigeAnsicht('hours')">⏰ Stunden</button>
         <button class="nav-btn" id="nav-table" onclick="zeigeAnsicht('table')">📊 Dashboard</button>
         <button class="nav-btn" id="nav-overview" onclick="zeigeAnsicht('overview')">📋 Übersicht</button>
-        <button class="nav-btn text-blue-400" onclick="syncToSupabase()">☁️ Sync CSV</button>
         <button class="nav-btn text-red-400" onclick="handleLogout()">Logout</button>
     </nav>
 
     <div class="container-custom">
-        
         <!-- KOSTEN FORMULAR -->
         <div id="view-form" class="view active">
-            <h1 class="text-2xl font-bold mb-6">Neue Kosten erfassen</h1>
+            <h2 id="form-title-kosten" class="text-xl font-bold mb-4">Neue Kosten</h2>
             <form id="expense-form">
+                <input type="hidden" id="edit-id-kosten">
                 <div class="form-grid">
+                    <div class="form-group"><label>Titel</label><input type="text" id="titel" required></div>
+                    <div class="form-group"><label>Betrag (€)</label><input type="number" id="betrag" step="0.01" required></div>
+                    <div class="form-group"><label>Datum</label><input type="date" id="datum" required></div>
                     <div class="form-group">
-                        <label class="main-label">Titel</label>
-                        <input type="text" id="titel" required placeholder="z.B. Wasserrechnung">
-                    </div>
-                    <div class="form-group">
-                        <label class="main-label">Betrag (€)</label>
-                        <input type="number" id="betrag" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="main-label">Datum</label>
-                        <input type="date" id="datum" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="main-label">Kategorie</label>
-                        <select id="kategorie" required>
-                            <option value="Nebenkosten">Nebenkosten</option>
-                            <option value="Handwerker/Reparatur">Handwerker / Reparatur</option>
-                            <option value="Versicherung">Versicherung</option>
-                            <option value="Sonstiges">Sonstiges</option>
+                        <label>Kategorie</label>
+                        <select id="kategorie">
+                            <option>Nebenkosten</option>
+                            <option>Reparaturkosten</option>
+                            <option>Inventar</option>
+                            <option>Sonstiges</option>
                         </select>
                     </div>
-                    <div class="form-group full-width">
-                        <label class="main-label">Objekte</label>
+                    <div class="full-width">
+                        <label>Objekte (Mehrfachauswahl)</label>
                         <div class="checkbox-group">
-                            <input type="checkbox" id="obj-haus" name="objekt" value="Haus"><label for="obj-haus">Haus</label>
-                            <input type="checkbox" id="obj-app1" name="objekt" value="App1"><label for="obj-app1">App1</label>
-                            <input type="checkbox" id="obj-app2" name="objekt" value="App2"><label for="obj-app2">App2</label>
+                            <input type="checkbox" id="k-a" name="obj" value="Allgemein"><label for="k-a">Allgemein</label>
+                            <input type="checkbox" id="k-h" name="obj" value="Haus"><label for="k-h">Haus</label>
+                            <input type="checkbox" id="k-1" name="obj" value="App1"><label for="k-1">App1</label>
+                            <input type="checkbox" id="k-2" name="obj" value="App2"><label for="k-2">App2</label>
+                            <input type="checkbox" id="k-3" name="obj" value="App3"><label for="k-3">App3</label>
+                            <input type="checkbox" id="k-4" name="obj" value="App4"><label for="k-4">App4</label>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label class="main-label">Wer hat bezahlt?</label>
-                        <select id="bezahlt_von" required>
-                            <option value="Luka">Luka</option>
-                            <option value="Person B">Person B</option>
-                            <option value="Gemeinschaftskonto">Gemeinschaftskonto</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="main-label">Frequenz</label>
-                        <select id="frequenz" required>
-                            <option value="einmalig">Einmalig</option>
-                            <option value="monatlich">Monatlich</option>
-                            <option value="jaehrlich">Jährlich</option>
-                        </select>
-                    </div>
+                    <div><label>Bezahlt von</label><select id="von"><option>Schattkowski</option><option>Ratzlaff</option><option>Gemeinschaft</option></select></div>
+                    <div><label>Beleg Bild</label><input type="file" id="beleg-file" accept="image/*"></div>
                 </div>
-                <button type="submit" class="submit-btn">Kosten eintragen</button>
+                <button type="submit" class="submit-btn" id="btn-save-kosten">Speichern</button>
+                <button type="button" onclick="cancelEdit('kosten')" id="btn-cancel-kosten" class="hidden mt-2 text-red-500 w-full font-bold">Abbrechen</button>
             </form>
         </div>
 
         <!-- EINNAHMEN FORMULAR -->
         <div id="view-income" class="view">
-            <h1 class="text-2xl font-bold mb-6">Einnahme erfassen</h1>
+            <h2 id="form-title-einnahmen" class="text-xl font-bold mb-4">Neue Einnahme</h2>
             <form id="income-form">
+                <input type="hidden" id="edit-id-einnahmen">
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label class="main-label">Betrag (€)</label>
-                        <input type="number" id="income-betrag" step="0.01" required>
+                    <div class="form-group"><label>Betrag (€)</label><input type="number" id="i-betrag" step="0.01" required></div>
+                    <div class="form-group"><label>Datum</label><input type="date" id="i-datum" required></div>
+                    <div class="full-width">
+                        <label>Objekte (Mehrfachauswahl)</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="i-a" name="i-obj" value="Allgemein"><label for="i-a">Allgemein</label>
+                            <input type="checkbox" id="i-h" name="i-obj" value="Haus"><label for="i-h">Haus</label>
+                            <input type="checkbox" id="i-1" name="i-obj" value="App1"><label for="i-1">App1</label>
+                            <input type="checkbox" id="i-2" name="i-obj" value="App2"><label for="i-2">App2</label>
+                            <input type="checkbox" id="i-3" name="i-obj" value="App3"><label for="i-3">App3</label>
+                            <input type="checkbox" id="i-4" name="i-obj" value="App4"><label for="i-4">App4</label>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="main-label">Datum</label>
-                        <input type="date" id="income-datum" required>
-                    </div>
-                    <div class="form-group full-width">
-                        <label class="main-label">Beschreibung</label>
-                        <textarea id="income-beschreibung" required></textarea>
-                    </div>
+                    <div class="form-group"><label>Erhalten</label><select id="i-von"><option>Schattkowski</option><option>Ratzlaff</option><option>Gemeinschaft</option></select></div>
+                    <div class="full-width"><label>Beschreibung</label><textarea id="i-desc"></textarea></div>
                 </div>
-                <button type="submit" class="submit-btn">Einnahme speichern</button>
+                <button type="submit" class="submit-btn" id="btn-save-einnahmen">Speichern</button>
+                <button type="button" onclick="cancelEdit('einnahmen')" id="btn-cancel-einnahmen" class="hidden mt-2 text-red-500 w-full font-bold">Abbrechen</button>
             </form>
         </div>
 
         <!-- STUNDEN FORMULAR -->
         <div id="view-hours" class="view">
-            <h1 class="text-2xl font-bold mb-6">Arbeitsstunden erfassen</h1>
+            <h2 id="form-title-stunden" class="text-xl font-bold mb-4">Stunden erfassen</h2>
             <form id="hours-form">
+                <input type="hidden" id="edit-id-stunden">
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label class="main-label">Stunden</label>
-                        <input type="number" id="hours-stunden" step="0.5" required>
+                    <div class="form-group"><label>Stunden</label><input type="number" id="h-stunden" step="0.5" required></div>
+                    <div class="form-group"><label>Datum</label><input type="date" id="h-datum" required></div>
+                    <div class="form-group"><label>Person</label><select id="h-pers"><option>Schattkowski</option><option>Ratzlaff</option></select></div>
+                    <div class="full-width">
+                        <label>Objekte (Mehrfachauswahl)</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="h-a" name="h-obj" value="Allgemein"><label for="h-a">Allgemein</label>
+                            <input type="checkbox" id="h-h" name="h-obj" value="Haus"><label for="h-h">Haus</label>
+                            <input type="checkbox" id="h-1" name="h-obj" value="App1"><label for="h-1">App1</label>
+                            <input type="checkbox" id="h-2" name="h-obj" value="App2"><label for="h-2">App2</label>
+                            <input type="checkbox" id="h-3" name="h-obj" value="App3"><label for="h-3">App3</label>
+                            <input type="checkbox" id="h-4" name="h-obj" value="App4"><label for="h-4">App4</label>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="main-label">Datum</label>
-                        <input type="date" id="hours-datum" required>
-                    </div>
-                    <div class="form-group full-width">
-                        <label class="main-label">Tätigkeit</label>
-                        <textarea id="hours-beschreibung" required></textarea>
-                    </div>
+                    <div class="full-width"><label>Tätigkeit</label><textarea id="h-desc"></textarea></div>
                 </div>
-                <button type="submit" class="submit-btn">Stunden speichern</button>
+                <button type="submit" class="submit-btn" id="btn-save-stunden">Speichern</button>
+                <button type="button" onclick="cancelEdit('stunden')" id="btn-cancel-stunden" class="hidden mt-2 text-red-500 w-full font-bold">Abbrechen</button>
             </form>
         </div>
 
-        <!-- DASHBOARD TABELLE & CHARTS -->
+        <!-- DASHBOARD & TABELLEN -->
         <div id="view-table" class="view">
-            <div class="filter-bar">
+            <div class="flex flex-wrap gap-4 mb-6 bg-gray-100 p-4 rounded items-center">
                 <strong>Filter:</strong>
-                <select id="filter-objekt" onchange="updateDashboard()">
+                <select id="f-obj" onchange="loadAllData()" class="w-auto font-bold bg-white">
                     <option value="alle">Alle Objekte</option>
-                    <option value="Haus">Haus</option>
-                    <option value="App1">App1</option>
-                    <option value="App2">App2</option>
+                    <option>Allgemein</option><option>Haus</option><option>App1</option><option>App2</option><option>App3</option><option>App4</option>
+                </select>
+                <select id="f-jahr" onchange="loadAllData()" class="w-auto font-bold bg-white">
+                    <option value="alle">Alle Jahre</option>
                 </select>
             </div>
-            <div class="kpi-grid">
-                <div class="kpi-card"><h3>Gesamtausgaben</h3><div class="kpi-value" id="kpi-total">0,00 €</div></div>
-                <div class="kpi-card green"><h3>Einnahmen</h3><div class="kpi-value" id="kpi-income">0,00 €</div></div>
-                <div class="kpi-card orange"><h3>Sync-Status</h3><div class="kpi-value text-sm" id="sync-status">Bereit</div></div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div class="bg-white p-4 border rounded"><canvas id="kostenChart"></canvas></div>
-                <div class="bg-white p-4 border rounded"><canvas id="kategorieChart"></canvas></div>
-            </div>
-            <h2 class="text-xl font-bold mb-4">Buchungsliste</h2>
+            
+            <h3 class="font-bold mb-2">Kostenübersicht</h3>
             <div class="overflow-x-auto">
-                <table id="expenses-table">
-                    <thead><tr><th>Datum</th><th>Titel</th><th>Objekt</th><th>Kategorie</th><th>Betrag</th><th>Bezahlt von</th></tr></thead>
+                <table id="t-kosten">
+                    <thead><tr><th>Datum</th><th>Titel</th><th>Objekt</th><th>€</th><th>Beleg</th><th>Aktion</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
+
+            <h3 class="font-bold mt-8 mb-2">Einnahmenübersicht</h3>
+            <table id="t-einnahmen">
+                <thead><tr><th>Datum</th><th>Objekt</th><th>€</th><th>Erhalten</th><th>Aktion</th></tr></thead>
+                <tbody></tbody>
+            </table>
+
+            <h3 class="font-bold mt-8 mb-2">Arbeitsstunden</h3>
+            <table id="t-stunden">
+                <thead><tr><th>Datum</th><th>Person</th><th>Objekt</th><th>Std</th><th>Aktion</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
 
-        <!-- ÜBERSICHT -->
+        <!-- ÜBERSICHT (Details) -->
         <div id="view-overview" class="view">
-            <h2 class="text-xl font-bold mb-4">Einnahmenhistorie</h2>
-            <table id="income-table" class="mb-8">
-                <thead><tr><th>Datum</th><th>Beschreibung</th><th>Betrag</th></tr></thead>
-                <tbody></tbody>
-            </table>
-            <h2 class="text-xl font-bold mb-4">Stundenhistorie</h2>
-            <table id="hours-table">
-                <thead><tr><th>Datum</th><th>Tätigkeit</th><th>Stunden</th></tr></thead>
-                <tbody></tbody>
-            </table>
+            <h3 class="font-bold mb-2">Einnahmen Details</h3>
+            <table id="t-inc-ov"><thead><tr><th>Datum</th><th>Objekt</th><th>Betrag</th><th>Erhalten</th><th>Info</th></tr></thead><tbody></tbody></table>
+            <h3 class="font-bold mt-8 mb-2">Stunden Details</h3>
+            <table id="t-hrs-ov"><thead><tr><th>Datum</th><th>Person</th><th>Objekt</th><th>Stunden</th><th>Tätigkeit</th></tr></thead><tbody></tbody></table>
         </div>
     </div>
 
     <script>
         const SB_URL = "https://ebhyuxpumgtxneolksur.supabase.co";
         const SB_KEY = "sb_publishable_uKfOIinQ9EdNd8wlJlXigw_tesN18hx";
-        let supabaseClient = null;
-        
-        let alleAusgaben = JSON.parse(localStorage.getItem('alleAusgaben')) || [];
-        let alleEinnahmen = JSON.parse(localStorage.getItem('alleEinnahmen')) || [];
-        let alleStunden = JSON.parse(localStorage.getItem('alleStunden')) || [];
-        
-        let barChartObj = null;
-        let pieChartObj = null;
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+        let currentUser = null;
 
         window.onload = async () => {
-            supabaseClient = supabase.createClient(SB_URL, SB_KEY);
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
-
+            currentUser = session.user;
             document.getElementById('body-content').classList.remove('opacity-0');
-            setzeHeutigesDatum();
-            updateDashboard();
-            updateOverviewTables();
-            
-            supabaseClient.auth.onAuthStateChange((event) => {
-                if (event === 'SIGNED_OUT') window.location.href = 'index.html';
-            });
+            initDate();
+            await loadAllData();
+            initYearFilter();
         };
 
-        function setzeHeutigesDatum() {
-            const heute = new Date().toISOString().split('T')[0];
-            document.getElementById('datum').value = heute;
-            document.getElementById('income-datum').value = heute;
-            document.getElementById('hours-datum').value = heute;
+        function initDate() {
+            const h = new Date().toISOString().split('T')[0];
+            document.getElementById('datum').value = h;
+            document.getElementById('i-datum').value = h;
+            document.getElementById('h-datum').value = h;
         }
 
-        function zeigeAnsicht(ansicht) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`view-${ansicht}`).classList.add('active');
-            document.getElementById(`nav-${ansicht}`)?.classList.add('active');
-            if (ansicht === 'table') updateDashboard();
-            if (ansicht === 'overview') updateOverviewTables();
+        async function initYearFilter() {
+            const s = document.getElementById('f-jahr');
+            const { data } = await supabaseClient.from('kosten').select('datum');
+            if(!data) return;
+            const jahre = [...new Set(data.map(e => e.datum.substring(0,4)))].sort().reverse();
+            s.innerHTML = '<option value="alle">Alle Jahre</option>';
+            jahre.forEach(jahr => s.innerHTML += `<option value="${jahr}">${jahr}</option>`);
         }
 
-        async function handleLogout() { await supabaseClient.auth.signOut(); }
+        function zeigeAnsicht(a) {
+            document.querySelectorAll('.view, .nav-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${a}`).classList.add('active');
+            document.getElementById(`nav-${a}`).classList.add('active');
+            if (a === 'table' || a === 'overview') loadAllData();
+        }
 
-        document.getElementById('expense-form').addEventListener('submit', (e) => {
+        async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
+
+        // --- DATEN LADEN ---
+        async function loadAllData() {
+            const objFilter = document.getElementById('f-obj').value;
+            const jahrFilter = document.getElementById('f-jahr').value;
+            
+            // KOSTEN
+            let qK = supabaseClient.from('kosten').select('*').order('datum', {ascending: false});
+            if(objFilter !== 'alle') qK = qK.ilike('objekt', `%${objFilter}%`);
+            if(jahrFilter !== 'alle') qK = qK.gte('datum', `${jahrFilter}-01-01`).lte('datum', `${jahrFilter}-12-31`);
+            const { data: kData } = await qK;
+            renderTable('t-kosten', kData, ['datum', 'titel', 'objekt', 'betrag', 'beleg_url'], 'kosten');
+
+            // EINNAHMEN
+            let qE = supabaseClient.from('einnahmen').select('*').order('datum', {ascending: false});
+            if(objFilter !== 'alle') qE = qE.ilike('objekt', `%${objFilter}%`);
+            if(jahrFilter !== 'alle') qE = qE.gte('datum', `${jahrFilter}-01-01`).lte('datum', `${jahrFilter}-12-31`);
+            const { data: eData } = await qE;
+            renderTable('t-einnahmen', eData, ['datum', 'objekt', 'betrag', 'erhalten_von'], 'einnahmen');
+            renderTable('t-inc-ov', eData, ['datum', 'objekt', 'betrag', 'erhalten_von', 'beschreibung'], 'einnahmen');
+
+            // STUNDEN
+            let qS = supabaseClient.from('stunden').select('*').order('datum', {ascending: false});
+            if(objFilter !== 'alle') qS = qS.ilike('objekt', `%${objFilter}%`);
+            if(jahrFilter !== 'alle') qS = qS.gte('datum', `${jahrFilter}-01-01`).lte('datum', `${jahrFilter}-12-31`);
+            const { data: sData } = await qS;
+            renderTable('t-stunden', sData, ['datum', 'person', 'objekt', 'stunden'], 'stunden');
+            renderTable('t-hrs-ov', sData, ['datum', 'person', 'objekt', 'stunden', 'beschreibung'], 'stunden');
+        }
+
+        function renderTable(id, data, cols, type) {
+            const tbody = document.querySelector(`#${id} tbody`);
+            if(!tbody) return;
+            tbody.innerHTML = (data || []).map(row => `
+                <tr>
+                    ${cols.map(c => {
+                        if(c === 'beleg_url') return `<td>${row[c] ? `<button onclick="openSecureFile('${row[c]}')" class="text-blue-500">📎</button>` : '-'}</td>`;
+                        if(c === 'betrag') return `<td>${row[c].toFixed(2)}€</td>`;
+                        if(c === 'objekt') return `<td><b>${row[c] || '-'}</b></td>`;
+                        if(c === 'datum') return `<td>${new Date(row[c]).toLocaleDateString('de-DE')}</td>`;
+                        return `<td>${row[c] || '-'}</td>`;
+                    }).join('')}
+                    <td>
+                        ${row.user_id === currentUser.id ? `<button onclick="editEntry('${type}', '${row.id}')" class="edit-btn">Edit</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+            if(!data || data.length === 0) tbody.innerHTML = `<tr><td colspan="${cols.length + 1}" class="text-center text-gray-400 py-4">Keine Daten gefunden</td></tr>`;
+        }
+
+        async function openSecureFile(filePath) {
+            const { data, error } = await supabaseClient.storage.from('belege').createSignedUrl(filePath, 60);
+            if (error) { alert("Fehler: " + error.message); return; }
+            window.open(data.signedUrl, '_blank');
+        }
+
+        // --- SPEICHERN ---
+        document.getElementById('expense-form').onsubmit = async (e) => {
             e.preventDefault();
-            const objekte = Array.from(document.querySelectorAll('input[name="objekt"]:checked')).map(cb => cb.value);
-            alleAusgaben.push({
-                id: Date.now(),
+            const id = document.getElementById('edit-id-kosten').value;
+            const file = document.getElementById('beleg-file').files[0];
+            let finalFilePath = null;
+
+            if (file) {
+                const fName = `${Date.now()}_${file.name}`;
+                const { data: fData, error: fError } = await supabaseClient.storage.from('belege').upload(fName, file);
+                if (!fError) finalFilePath = fName;
+            }
+
+            const payload = {
                 titel: document.getElementById('titel').value,
                 betrag: parseFloat(document.getElementById('betrag').value),
                 datum: document.getElementById('datum').value,
                 kategorie: document.getElementById('kategorie').value,
-                objekt: objekte.join(', '),
-                bezahlt_von: document.getElementById('bezahlt_von').value,
-                frequenz: document.getElementById('frequenz').value
-            });
-            localStorage.setItem('alleAusgaben', JSON.stringify(alleAusgaben));
-            e.target.reset(); setzeHeutigesDatum(); alert('Kosten gespeichert!');
-        });
+                objekt: Array.from(document.querySelectorAll('input[name="obj"]:checked')).map(c => c.value).join(', '),
+                bezahlt_von: document.getElementById('von').value,
+                user_id: currentUser.id
+            };
+            if(finalFilePath) payload.beleg_url = finalFilePath;
 
-        document.getElementById('income-form').addEventListener('submit', (e) => {
+            const { error } = id ? await supabaseClient.from('kosten').update(payload).eq('id', id) : await supabaseClient.from('kosten').insert([payload]);
+            if(!error) { alert('Erfolgreich!'); cancelEdit('kosten'); loadAllData(); }
+        };
+
+        document.getElementById('income-form').onsubmit = async (e) => {
             e.preventDefault();
-            alleEinnahmen.push({
-                id: Date.now(),
-                betrag: parseFloat(document.getElementById('income-betrag').value),
-                datum: document.getElementById('income-datum').value,
-                beschreibung: document.getElementById('income-beschreibung').value
-            });
-            localStorage.setItem('alleEinnahmen', JSON.stringify(alleEinnahmen));
-            e.target.reset(); setzeHeutigesDatum(); alert('Einnahme gespeichert!');
-        });
+            const id = document.getElementById('edit-id-einnahmen').value;
+            const payload = {
+                betrag: parseFloat(document.getElementById('i-betrag').value),
+                datum: document.getElementById('i-datum').value,
+                objekt: Array.from(document.querySelectorAll('input[name="i-obj"]:checked')).map(c => c.value).join(', '),
+                erhalten_von: document.getElementById('i-von').value,
+                beschreibung: document.getElementById('i-desc').value,
+                user_id: currentUser.id
+            };
+            const { error } = id ? await supabaseClient.from('einnahmen').update(payload).eq('id', id) : await supabaseClient.from('einnahmen').insert([payload]);
+            if(!error) { alert('Erfolgreich!'); cancelEdit('einnahmen'); loadAllData(); }
+        };
 
-        document.getElementById('hours-form').addEventListener('submit', (e) => {
+        document.getElementById('hours-form').onsubmit = async (e) => {
             e.preventDefault();
-            alleStunden.push({
-                id: Date.now(),
-                stunden: parseFloat(document.getElementById('hours-stunden').value),
-                datum: document.getElementById('hours-datum').value,
-                beschreibung: document.getElementById('hours-beschreibung').value
-            });
-            localStorage.setItem('alleStunden', JSON.stringify(alleStunden));
-            e.target.reset(); setzeHeutigesDatum(); alert('Stunden gespeichert!');
-        });
+            const id = document.getElementById('edit-id-stunden').value;
+            const payload = {
+                stunden: parseFloat(document.getElementById('h-stunden').value),
+                datum: document.getElementById('h-datum').value,
+                person: document.getElementById('h-pers').value,
+                objekt: Array.from(document.querySelectorAll('input[name="h-obj"]:checked')).map(c => c.value).join(', '),
+                beschreibung: document.getElementById('h-desc').value,
+                user_id: currentUser.id
+            };
+            const { error } = id ? await supabaseClient.from('stunden').update(payload).eq('id', id) : await supabaseClient.from('stunden').insert([payload]);
+            if(!error) { alert('Erfolgreich!'); cancelEdit('stunden'); loadAllData(); }
+        };
 
-        function updateDashboard() {
-            const objFilter = document.getElementById('filter-objekt').value;
-            let gefiltert = alleAusgaben.filter(e => objFilter === 'alle' || e.objekt.includes(objFilter));
-            
-            const totalExp = gefiltert.reduce((sum, e) => sum + e.betrag, 0);
-            const totalInc = alleEinnahmen.reduce((sum, e) => sum + e.betrag, 0);
-            
-            document.getElementById('kpi-total').innerText = totalExp.toLocaleString('de-DE') + ' €';
-            document.getElementById('kpi-income').innerText = totalInc.toLocaleString('de-DE') + ' €';
+        // --- BEARBEITEN ---
+        async function editEntry(type, id) {
+            const { data } = await supabaseClient.from(type).select('*').eq('id', id).single();
+            if (!data) return;
 
-            const tbody = document.querySelector('#expenses-table tbody');
-            tbody.innerHTML = gefiltert.slice().reverse().map(e => `
-                <tr>
-                    <td>${new Date(e.datum).toLocaleDateString('de-DE')}</td>
-                    <td>${e.titel}</td>
-                    <td><strong>${e.objekt}</strong></td>
-                    <td>${e.kategorie}</td>
-                    <td>${e.betrag.toFixed(2)} €</td>
-                    <td>${e.bezahlt_von}</td>
-                </tr>
-            `).join('');
-
-            zeichneCharts(gefiltert);
+            if(type === 'kosten') {
+                zeigeAnsicht('form');
+                document.getElementById('edit-id-kosten').value = data.id;
+                document.getElementById('titel').value = data.titel;
+                document.getElementById('betrag').value = data.betrag;
+                document.getElementById('datum').value = data.datum;
+                document.getElementById('kategorie').value = data.kategorie;
+                document.getElementById('von').value = data.bezahlt_von;
+                const objs = (data.objekt || "").split(', ');
+                document.querySelectorAll('input[name="obj"]').forEach(cb => cb.checked = objs.includes(cb.value));
+                document.getElementById('form-title-kosten').innerText = "Kosten bearbeiten";
+                document.getElementById('btn-cancel-kosten').classList.remove('hidden');
+            } else if(type === 'einnahmen') {
+                zeigeAnsicht('income');
+                document.getElementById('edit-id-einnahmen').value = data.id;
+                document.getElementById('i-betrag').value = data.betrag;
+                document.getElementById('i-datum').value = data.datum;
+                document.getElementById('i-von').value = data.erhalten_von;
+                document.getElementById('i-desc').value = data.beschreibung;
+                const objs = (data.objekt || "").split(', ');
+                document.querySelectorAll('input[name="i-obj"]').forEach(cb => cb.checked = objs.includes(cb.value));
+                document.getElementById('form-title-einnahmen').innerText = "Einnahme bearbeiten";
+                document.getElementById('btn-cancel-einnahmen').classList.remove('hidden');
+            } else if(type === 'stunden') {
+                zeigeAnsicht('hours');
+                document.getElementById('edit-id-stunden').value = data.id;
+                document.getElementById('h-stunden').value = data.stunden;
+                document.getElementById('h-datum').value = data.datum;
+                document.getElementById('h-pers').value = data.person;
+                document.getElementById('h-desc').value = data.beschreibung;
+                const objs = (data.objekt || "").split(', ');
+                document.querySelectorAll('input[name="h-obj"]').forEach(cb => cb.checked = objs.includes(cb.value));
+                document.getElementById('form-title-stunden').innerText = "Stunden bearbeiten";
+                document.getElementById('btn-cancel-stunden').classList.remove('hidden');
+            }
         }
 
-        function zeichneCharts(daten) {
-            const ctxBar = document.getElementById('kostenChart').getContext('2d');
-            const ctxPie = document.getElementById('kategorieChart').getContext('2d');
-            
-            const catMap = {};
-            daten.forEach(e => catMap[e.kategorie] = (catMap[e.kategorie] || 0) + e.betrag);
-
-            if (barChartObj) barChartObj.destroy();
-            if (pieChartObj) pieChartObj.destroy();
-
-            barChartObj = new Chart(ctxBar, {
-                type: 'bar',
-                data: { labels: Object.keys(catMap), datasets: [{ label: 'Euro', data: Object.values(catMap), backgroundColor: '#3498db' }] },
-                options: { plugins: { title: { display: true, text: 'Kostenübersicht' } } }
-            });
-
-            pieChartObj = new Chart(ctxPie, {
-                type: 'pie',
-                data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: ['#27ae60', '#f39c12', '#9b59b6', '#e74c3c'] }] },
-                options: { plugins: { title: { display: true, text: 'Verteilung' } } }
-            });
-        }
-
-        function updateOverviewTables() {
-            document.querySelector('#income-table tbody').innerHTML = alleEinnahmen.slice().reverse().map(e => `
-                <tr><td>${new Date(e.datum).toLocaleDateString('de-DE')}</td><td>${e.beschreibung}</td><td>${e.betrag.toFixed(2)} €</td></tr>
-            `).join('');
-            document.querySelector('#hours-table tbody').innerHTML = alleStunden.slice().reverse().map(e => `
-                <tr><td>${new Date(e.datum).toLocaleDateString('de-DE')}</td><td>${e.beschreibung}</td><td>${e.stunden} h</td></tr>
-            `).join('');
-        }
-
-        async function syncToSupabase() {
-            const headers = ['Datum', 'Titel', 'Objekt', 'Kategorie', 'Betrag', 'BezahltVon'];
-            const rows = alleAusgaben.map(e => [e.datum, `"${e.titel}"`, `"${e.objekt}"`, e.kategorie, e.betrag, e.bezahlt_von]);
-            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-            const blob = new Blob([csv], { type: 'text/csv' });
-            
-            document.getElementById('sync-status').innerText = 'Sync...';
-            const { error } = await supabaseClient.storage.from('buchungen').upload(`export_${Date.now()}.csv`, blob);
-            
-            if (error) { alert('Fehler: ' + error.message); document.getElementById('sync-status').innerText = 'Fehler'; }
-            else { alert('Sync erfolgreich!'); document.getElementById('sync-status').innerText = 'OK'; }
+        function cancelEdit(type) {
+            if(type === 'kosten') {
+                document.getElementById('expense-form').reset();
+                document.getElementById('edit-id-kosten').value = "";
+                document.getElementById('form-title-kosten').innerText = "Neue Kosten";
+                document.getElementById('btn-cancel-kosten').classList.add('hidden');
+                document.querySelectorAll('input[name="obj"]').forEach(cb => cb.checked = false);
+            } else if(type === 'einnahmen') {
+                document.getElementById('income-form').reset();
+                document.getElementById('edit-id-einnahmen').value = "";
+                document.getElementById('form-title-einnahmen').innerText = "Neue Einnahme";
+                document.getElementById('btn-cancel-einnahmen').classList.add('hidden');
+                document.querySelectorAll('input[name="i-obj"]').forEach(cb => cb.checked = false);
+            } else if(type === 'stunden') {
+                document.getElementById('hours-form').reset();
+                document.getElementById('edit-id-stunden').value = "";
+                document.getElementById('form-title-stunden').innerText = "Stunden erfassen";
+                document.getElementById('btn-cancel-stunden').classList.add('hidden');
+                document.querySelectorAll('input[name="h-obj"]').forEach(cb => cb.checked = false);
+            }
+            initDate();
         }
     </script>
 </body>
