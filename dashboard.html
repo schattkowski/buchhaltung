@@ -308,6 +308,17 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = 'index.html'; return; }
             currentUser = session.user;
+
+            // NEU: Admin-Status prüfen
+            const { data: roleData } = await supabaseClient
+                .from('user_roles')
+                .select('role')
+                .eq('id', currentUser.id)
+                .single();
+            
+            currentUser.isAdmin = roleData?.role === 'admin';
+            console.log("User eingeloggt:", currentUser.email, "Admin-Status:", currentUser.isAdmin);
+
             document.getElementById('body-content').classList.remove('opacity-0');
             initDate();
             await loadAllData();
@@ -481,7 +492,7 @@
                         return `<td>${row[c] || '-'}</td>`;
                     }).join('')}
                     <td>
-                        ${row.user_id === currentUser.id ? `
+                        ${(row.user_id === currentUser.id || currentUser.isAdmin) ? `
                             <button onclick="editEntry('${type}', '${row.id}')" class="edit-btn">Edit</button>
                             <button onclick="deleteEntry('${type}', '${row.id}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs ml-1">Löschen</button>
                         ` : ''}
