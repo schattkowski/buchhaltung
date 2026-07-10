@@ -38,12 +38,30 @@
         <button class="nav-btn active" id="nav-form" onclick="zeigeAnsicht('form')">📝 Kosten</button>
         <button class="nav-btn" id="nav-income" onclick="zeigeAnsicht('income')">💰 Einnahmen</button>
         <button class="nav-btn" id="nav-hours" onclick="zeigeAnsicht('hours')">⏰ Stunden</button>
-        <button class="nav-btn" id="nav-table" onclick="zeigeAnsicht('table')">📊 Dashboard</button>
-        <button class="nav-btn" id="nav-overview" onclick="zeigeAnsicht('overview')">📋 Übersicht</button>
+        <button class="nav-btn" id="nav-overview" onclick="zeigeAnsicht('overview')">📋 Verlauf</button>
+        <button class="nav-btn" id="nav-table" onclick="zeigeAnsicht('table')">📊 Analyse</button>
         <button class="nav-btn text-red-400" onclick="handleLogout()">Logout</button>
     </nav>
 
     <div class="container-custom">
+        <!-- GLOBALER FILTER -->
+        <div id="filter-container" class="hidden flex flex-wrap gap-4 mb-6 bg-gray-100 p-4 rounded items-center">
+            <strong>Filter:</strong>
+            <select id="f-obj" onchange="loadAllData()" class="w-auto font-bold bg-white">
+                <option value="alle">Alle Objekte</option>
+                <option>Allgemein</option><option>Haus</option><option>App1</option><option>App2</option><option>App3</option><option>App4</option>
+            </select>
+            <select id="f-jahr" onchange="loadAllData()" class="w-auto font-bold bg-white">
+                <option value="alle">Alle Jahre</option>
+            </select>
+            <select id="f-pers" onchange="loadAllData()" class="w-auto font-bold bg-white">
+                <option value="alle">Alle Personen</option>
+                <option>Schattkowski</option>
+                <option>Ratzlaff</option>
+                <option>Gemeinschaft</option>
+            </select>
+        </div>
+
         <!-- KOSTEN FORMULAR -->
         <div id="view-form" class="view active">
             <h2 id="form-title-kosten" class="text-xl font-bold mb-4">Neue Kosten</h2>
@@ -73,8 +91,18 @@
                             <input type="checkbox" id="k-4" name="obj" value="App4"><label for="k-4">App4</label>
                         </div>
                     </div>
+                    <div class="form-group">
+                        <label>Intervall</label>
+                        <select id="intervall">
+                            <option>Einmalig</option>
+                            <option>Monatlich</option>
+                            <option>Quartalsweise</option>
+                            <option>Jährlich</option>
+                        </select>
+                    </div>
                     <div><label>Bezahlt von</label><select id="von"><option>Schattkowski</option><option>Ratzlaff</option><option>Gemeinschaft</option></select></div>
                     <div><label>Beleg Bild</label><input type="file" id="beleg-file" accept="image/*"></div>
+                    <div class="full-width"><label>Kommentar</label><textarea id="kommentar"></textarea></div>
                 </div>
                 <button type="submit" class="submit-btn" id="btn-save-kosten">Speichern</button>
                 <button type="button" onclick="cancelEdit('kosten')" id="btn-cancel-kosten" class="hidden mt-2 text-red-500 w-full font-bold">Abbrechen</button>
@@ -135,46 +163,138 @@
             </form>
         </div>
 
-        <!-- DASHBOARD & TABELLEN -->
+        <!-- ANALYSE (Diagramme) -->
         <div id="view-table" class="view">
-            <div class="flex flex-wrap gap-4 mb-6 bg-gray-100 p-4 rounded items-center">
-                <strong>Filter:</strong>
-                <select id="f-obj" onchange="loadAllData()" class="w-auto font-bold bg-white">
-                    <option value="alle">Alle Objekte</option>
-                    <option>Allgemein</option><option>Haus</option><option>App1</option><option>App2</option><option>App3</option><option>App4</option>
-                </select>
-                <select id="f-jahr" onchange="loadAllData()" class="w-auto font-bold bg-white">
-                    <option value="alle">Alle Jahre</option>
-                </select>
+            <h2 class="text-xl font-bold mb-4">Analyse & Auswertungen</h2>
+            
+            <!-- KPI CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 shadow-sm text-center">
+                    <p class="text-sm text-blue-600 font-bold uppercase">Gesamt-Ergebnis</p>
+                    <p id="kpi-profit" class="text-2xl font-black text-blue-900">0.00€</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg border border-green-100 shadow-sm text-center">
+                    <p class="text-sm text-green-600 font-bold uppercase">Einnahmen</p>
+                    <p id="kpi-income" class="text-2xl font-black text-green-900">0.00€</p>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg border border-red-100 shadow-sm text-center">
+                    <p class="text-sm text-red-600 font-bold uppercase">Kosten</p>
+                    <p id="kpi-expenses" class="text-2xl font-black text-red-900">0.00€</p>
+                </div>
+                <div class="bg-amber-50 p-4 rounded-lg border border-amber-100 shadow-sm text-center">
+                    <p class="text-sm text-amber-600 font-bold uppercase">Stunden</p>
+                    <p id="kpi-hours" class="text-2xl font-black text-amber-900">0.0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
+                    <h3 class="font-bold mb-2 text-center">Cashflow Trend (Monatlich)</h3>
+                    <canvas id="chart-cashflow"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
+                    <h3 class="font-bold mb-2 text-center">Gewinn pro Objekt</h3>
+                    <canvas id="chart-profit-obj"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
+                    <h3 class="font-bold mb-2 text-center">Kosten nach Intervall</h3>
+                    <canvas id="chart-intervall"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
+                    <h3 class="font-bold mb-2 text-center">Kosten nach Kategorie</h3>
+                    <canvas id="chart-kosten-cat"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
+                    <h3 class="font-bold mb-2 text-center">Arbeitsstunden pro Objekt</h3>
+                    <canvas id="chart-hours-obj"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
+                    <h3 class="font-bold mb-2 text-center">Bezahlt von (Kosten)</h3>
+                    <canvas id="chart-payer"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- VERLAUF (Tabellen) -->
+        <div id="view-overview" class="view">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Verlauf</h2>
+                <button onclick="exportAllToCSV()" class="bg-emerald-600 text-white px-4 py-2 rounded font-bold hover:bg-emerald-500 transition">📥 CSV Export (Alle)</button>
             </div>
             
             <h3 class="font-bold mb-2">Kostenübersicht</h3>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto mb-8">
                 <table id="t-kosten">
-                    <thead><tr><th>Datum</th><th>Titel</th><th>Objekt</th><th>€</th><th>Beleg</th><th>Aktion</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Datum<br><input type="text" onkeyup="filterTable('t-kosten', 0)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Titel<br><input type="text" onkeyup="filterTable('t-kosten', 1)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Objekt<br><input type="text" onkeyup="filterTable('t-kosten', 2)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Intervall<br><input type="text" onkeyup="filterTable('t-kosten', 3)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Betrag<br><input type="text" onkeyup="filterTable('t-kosten', 4)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Kommentar<br><input type="text" onkeyup="filterTable('t-kosten', 5)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Beleg</th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
                     <tbody></tbody>
+                    <tfoot class="bg-gray-100 font-bold">
+                        <tr>
+                            <td colspan="4" class="text-right">Summe:</td>
+                            <td id="sum-kosten">0.00€</td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
-            <h3 class="font-bold mt-8 mb-2">Einnahmenübersicht</h3>
-            <table id="t-einnahmen">
-                <thead><tr><th>Datum</th><th>Objekt</th><th>€</th><th>Erhalten</th><th>Aktion</th></tr></thead>
-                <tbody></tbody>
-            </table>
+            <h3 class="font-bold mb-2">Einnahmenübersicht</h3>
+            <div class="overflow-x-auto mb-8">
+                <table id="t-einnahmen">
+                    <thead>
+                        <tr>
+                            <th>Datum<br><input type="text" onkeyup="filterTable('t-einnahmen', 0)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Objekt<br><input type="text" onkeyup="filterTable('t-einnahmen', 1)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Betrag<br><input type="text" onkeyup="filterTable('t-einnahmen', 2)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Erhalten<br><input type="text" onkeyup="filterTable('t-einnahmen', 3)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Info<br><input type="text" onkeyup="filterTable('t-einnahmen', 4)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot class="bg-gray-100 font-bold">
+                        <tr>
+                            <td colspan="2" class="text-right">Summe:</td>
+                            <td id="sum-einnahmen">0.00€</td>
+                            <td colspan="3"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
 
-            <h3 class="font-bold mt-8 mb-2">Arbeitsstunden</h3>
-            <table id="t-stunden">
-                <thead><tr><th>Datum</th><th>Person</th><th>Objekt</th><th>Std</th><th>Aktion</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <!-- ÜBERSICHT (Details) -->
-        <div id="view-overview" class="view">
-            <h3 class="font-bold mb-2">Einnahmen Details</h3>
-            <table id="t-inc-ov"><thead><tr><th>Datum</th><th>Objekt</th><th>Betrag</th><th>Erhalten</th><th>Info</th></tr></thead><tbody></tbody></table>
-            <h3 class="font-bold mt-8 mb-2">Stunden Details</h3>
-            <table id="t-hrs-ov"><thead><tr><th>Datum</th><th>Person</th><th>Objekt</th><th>Stunden</th><th>Tätigkeit</th></tr></thead><tbody></tbody></table>
+            <h3 class="font-bold mb-2">Arbeitsstunden</h3>
+            <div class="overflow-x-auto">
+                <table id="t-stunden">
+                    <thead>
+                        <tr>
+                            <th>Datum<br><input type="text" onkeyup="filterTable('t-stunden', 0)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Person<br><input type="text" onkeyup="filterTable('t-stunden', 1)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Objekt<br><input type="text" onkeyup="filterTable('t-stunden', 2)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Std<br><input type="text" onkeyup="filterTable('t-stunden', 3)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Tätigkeit<br><input type="text" onkeyup="filterTable('t-stunden', 4)" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot class="bg-gray-100 font-bold">
+                        <tr>
+                            <td colspan="3" class="text-right">Gesamtstunden:</td>
+                            <td id="sum-stunden">0.0</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -203,9 +323,14 @@
 
         async function initYearFilter() {
             const s = document.getElementById('f-jahr');
-            const { data } = await supabaseClient.from('kosten').select('datum');
-            if(!data) return;
-            const jahre = [...new Set(data.map(e => e.datum.substring(0,4)))].sort().reverse();
+            const { data: kData } = await supabaseClient.from('kosten').select('datum');
+            const { data: eData } = await supabaseClient.from('einnahmen').select('datum');
+            const { data: sData } = await supabaseClient.from('stunden').select('datum');
+            
+            const allData = [...(kData||[]), ...(eData||[]), ...(sData||[])];
+            if(allData.length === 0) return;
+            
+            const jahre = [...new Set(allData.map(e => e.datum.substring(0,4)))].sort().reverse();
             s.innerHTML = '<option value="alle">Alle Jahre</option>';
             jahre.forEach(jahr => s.innerHTML += `<option value="${jahr}">${jahr}</option>`);
         }
@@ -214,7 +339,14 @@
             document.querySelectorAll('.view, .nav-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${a}`).classList.add('active');
             document.getElementById(`nav-${a}`).classList.add('active');
-            if (a === 'table' || a === 'overview') loadAllData();
+            
+            const filterCont = document.getElementById('filter-container');
+            if (a === 'table' || a === 'overview') {
+                filterCont.classList.remove('hidden');
+                loadAllData();
+            } else {
+                filterCont.classList.add('hidden');
+            }
         }
 
         async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; }
@@ -223,34 +355,122 @@
         async function loadAllData() {
             const objFilter = document.getElementById('f-obj').value;
             const jahrFilter = document.getElementById('f-jahr').value;
+            const persFilter = document.getElementById('f-pers').value;
             
             // KOSTEN
             let qK = supabaseClient.from('kosten').select('*').order('datum', {ascending: false});
             if(objFilter !== 'alle') qK = qK.ilike('objekt', `%${objFilter}%`);
             if(jahrFilter !== 'alle') qK = qK.gte('datum', `${jahrFilter}-01-01`).lte('datum', `${jahrFilter}-12-31`);
+            if(persFilter !== 'alle') qK = qK.eq('bezahlt_von', persFilter);
             const { data: kData } = await qK;
-            renderTable('t-kosten', kData, ['datum', 'titel', 'objekt', 'betrag', 'beleg_url'], 'kosten');
+            renderTable('t-kosten', kData, ['datum', 'titel', 'objekt', 'intervall', 'betrag', 'kommentar', 'beleg_url'], 'kosten');
 
             // EINNAHMEN
             let qE = supabaseClient.from('einnahmen').select('*').order('datum', {ascending: false});
             if(objFilter !== 'alle') qE = qE.ilike('objekt', `%${objFilter}%`);
             if(jahrFilter !== 'alle') qE = qE.gte('datum', `${jahrFilter}-01-01`).lte('datum', `${jahrFilter}-12-31`);
+            if(persFilter !== 'alle') qE = qE.eq('erhalten_von', persFilter);
             const { data: eData } = await qE;
-            renderTable('t-einnahmen', eData, ['datum', 'objekt', 'betrag', 'erhalten_von'], 'einnahmen');
-            renderTable('t-inc-ov', eData, ['datum', 'objekt', 'betrag', 'erhalten_von', 'beschreibung'], 'einnahmen');
+            renderTable('t-einnahmen', eData, ['datum', 'objekt', 'betrag', 'erhalten_von', 'beschreibung'], 'einnahmen');
 
             // STUNDEN
             let qS = supabaseClient.from('stunden').select('*').order('datum', {ascending: false});
             if(objFilter !== 'alle') qS = qS.ilike('objekt', `%${objFilter}%`);
             if(jahrFilter !== 'alle') qS = qS.gte('datum', `${jahrFilter}-01-01`).lte('datum', `${jahrFilter}-12-31`);
+            if(persFilter !== 'alle') qS = qS.eq('person', persFilter);
             const { data: sData } = await qS;
-            renderTable('t-stunden', sData, ['datum', 'person', 'objekt', 'stunden'], 'stunden');
-            renderTable('t-hrs-ov', sData, ['datum', 'person', 'objekt', 'stunden', 'beschreibung'], 'stunden');
+            renderTable('t-stunden', sData, ['datum', 'person', 'objekt', 'stunden', 'beschreibung'], 'stunden');
+
+            // Charts & KPIs aktualisieren
+            updateCharts(kData || [], eData || [], sData || []);
+        }
+
+        let charts = {};
+        function updateCharts(kData, eData, sData) {
+            // KPIs BERECHNEN
+            const totalE = eData.reduce((s, d) => s + d.betrag, 0);
+            const totalK = kData.reduce((s, d) => s + d.betrag, 0);
+            const totalS = sData.reduce((s, d) => s + d.stunden, 0);
+            
+            document.getElementById('kpi-income').innerText = totalE.toFixed(2) + "€";
+            document.getElementById('kpi-expenses').innerText = totalK.toFixed(2) + "€";
+            document.getElementById('kpi-profit').innerText = (totalE - totalK).toFixed(2) + "€";
+            document.getElementById('kpi-hours').innerText = totalS.toFixed(1);
+
+            if(!document.getElementById('view-table').classList.contains('active')) return;
+
+            // 1. Cashflow Trend (Monatlich)
+            const months = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"];
+            const monthlyE = new Array(12).fill(0);
+            const monthlyK = new Array(12).fill(0);
+            eData.forEach(d => monthlyE[new Date(d.datum).getMonth()] += d.betrag);
+            kData.forEach(d => monthlyK[new Date(d.datum).getMonth()] += d.betrag);
+            
+            renderChart('chart-cashflow', 'line', 'Trend', months, null, null, [
+                { label: 'Einnahmen', data: monthlyE, borderColor: '#27ae60', backgroundColor: 'rgba(39,174,96,0.1)', fill: true },
+                { label: 'Kosten', data: monthlyK, borderColor: '#e74c3c', backgroundColor: 'rgba(231,76,60,0.1)', fill: true }
+            ]);
+
+            // 2. Gewinn pro Objekt
+            const profitObj = {};
+            eData.forEach(d => { (d.objekt||"").split(', ').forEach(o => profitObj[o] = (profitObj[o]||0) + (d.betrag / (d.objekt||"").split(', ').length)) });
+            kData.forEach(d => { (d.objekt||"").split(', ').forEach(o => profitObj[o] = (profitObj[o]||0) - (d.betrag / (d.objekt||"").split(', ').length)) });
+            renderChart('chart-profit-obj', 'bar', 'Gewinn (€)', Object.keys(profitObj), Object.values(profitObj), Object.values(profitObj).map(v => v >= 0 ? '#27ae60' : '#e74c3c'));
+
+            // 3. Kosten nach Intervall
+            const kInt = {};
+            kData.forEach(d => kInt[d.intervall] = (kInt[d.intervall] || 0) + d.betrag);
+            renderChart('chart-intervall', 'doughnut', 'Kosten', Object.keys(kInt), Object.values(kInt));
+
+            // 4. Kosten nach Kategorie
+            const kCat = {};
+            kData.forEach(d => kCat[d.kategorie] = (kCat[d.kategorie] || 0) + d.betrag);
+            renderChart('chart-kosten-cat', 'pie', 'Kosten', Object.keys(kCat), Object.values(kCat));
+
+            // 5. Stunden pro Objekt
+            const sObj = {};
+            sData.forEach(d => { (d.objekt||"").split(', ').forEach(o => sObj[o] = (sObj[o]||0) + (d.stunden / (d.objekt||"").split(', ').length)) });
+            renderChart('chart-hours-obj', 'bar', 'Stunden', Object.keys(sObj), Object.values(sObj), '#f39c12');
+
+            // 6. Bezahlt von (Kosten)
+            const kPayer = {};
+            kData.forEach(d => kPayer[d.bezahlt_von] = (kPayer[d.bezahlt_von] || 0) + d.betrag);
+            renderChart('chart-payer', 'doughnut', 'Anteil €', Object.keys(kPayer), Object.values(kPayer));
+        }
+
+        function renderChart(id, type, label, labels, data, colors, datasets = null) {
+            const canvas = document.getElementById(id);
+            if(!canvas) return;
+            if(charts[id]) charts[id].destroy();
+            
+            const config = {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: datasets || [{
+                        label: label,
+                        data: data,
+                        backgroundColor: Array.isArray(colors) ? colors : (colors || ['#3498db', '#9b59b6', '#f1c40f', '#e67e22', '#1abc9c', '#2ecc71', '#34495e']),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', display: true } }
+                }
+            };
+            charts[id] = new Chart(canvas.getContext('2d'), config);
         }
 
         function renderTable(id, data, cols, type) {
             const tbody = document.querySelector(`#${id} tbody`);
             if(!tbody) return;
+            
+            // Filter-Inputs zurücksetzen beim Neu-Laden der Daten
+            const headInputs = document.querySelectorAll(`#${id} thead input`);
+            headInputs.forEach(i => i.value = "");
+
             tbody.innerHTML = (data || []).map(row => `
                 <tr>
                     ${cols.map(c => {
@@ -261,11 +481,139 @@
                         return `<td>${row[c] || '-'}</td>`;
                     }).join('')}
                     <td>
-                        ${row.user_id === currentUser.id ? `<button onclick="editEntry('${type}', '${row.id}')" class="edit-btn">Edit</button>` : ''}
+                        ${row.user_id === currentUser.id ? `
+                            <button onclick="editEntry('${type}', '${row.id}')" class="edit-btn">Edit</button>
+                            <button onclick="deleteEntry('${type}', '${row.id}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs ml-1">Löschen</button>
+                        ` : ''}
                     </td>
                 </tr>
             `).join('');
             if(!data || data.length === 0) tbody.innerHTML = `<tr><td colspan="${cols.length + 1}" class="text-center text-gray-400 py-4">Keine Daten gefunden</td></tr>`;
+            
+            // Summen initial berechnen
+            updateSums(id);
+        }
+
+        // Excel-Style Spalten-Filterung
+        function filterTable(tableId) {
+            const table = document.getElementById(tableId);
+            const inputs = Array.from(table.querySelectorAll('thead input'));
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+
+            rows.forEach(row => {
+                const isVisible = inputs.every((input, index) => {
+                    const filterValue = input.value.toLowerCase();
+                    if (!filterValue) return true;
+                    const cellValue = row.cells[index].innerText.toLowerCase();
+                    return cellValue.includes(filterValue);
+                });
+                row.style.display = isVisible ? '' : 'none';
+            });
+            
+            // Summen nach Filterung aktualisieren
+            updateSums(tableId);
+        }
+
+        function updateSums(tableId) {
+            const table = document.getElementById(tableId);
+            const rows = Array.from(table.querySelectorAll('tbody tr'));
+            let total = 0;
+
+            let colIndex = -1;
+            let sumElemId = "";
+
+            if (tableId === 't-kosten') { colIndex = 4; sumElemId = "sum-kosten"; }
+            else if (tableId === 't-einnahmen') { colIndex = 2; sumElemId = "sum-einnahmen"; }
+            else if (tableId === 't-stunden') { colIndex = 3; sumElemId = "sum-stunden"; }
+
+            rows.forEach(row => {
+                if (row.style.display !== 'none' && row.cells.length > colIndex) {
+                    const val = parseFloat(row.cells[colIndex].innerText.replace('€', '').replace(',', '.'));
+                    if (!isNaN(val)) total += val;
+                }
+            });
+
+            const elem = document.getElementById(sumElemId);
+            if (elem) {
+                if (tableId === 't-stunden') elem.innerText = total.toFixed(1);
+                else elem.innerText = total.toFixed(2) + "€";
+            }
+        }
+
+        // CSV Export Funktion
+        function exportAllToCSV() {
+            try {
+                const tables = ['t-kosten', 't-einnahmen', 't-stunden'];
+                let csvContent = "";
+                
+                tables.forEach(tableId => {
+                    const table = document.getElementById(tableId);
+                    if (!table) return;
+
+                    // Titel ermitteln (das H3 über dem Div des Table)
+                    const title = table.parentElement.previousElementSibling ? table.parentElement.previousElementSibling.innerText : tableId;
+                    csvContent += `${title}\n`;
+                    
+                    const rows = Array.from(table.querySelectorAll('tr'));
+                    rows.forEach(row => {
+                        if (row.style.display === 'none') return;
+                        
+                        // Alle Zellen holen, aber die letzte Spalte (Aktion) weglassen
+                        const allCols = Array.from(row.querySelectorAll('th, td'));
+                        const cols = allCols.slice(0, -1); 
+                        
+                        const rowData = cols
+                            .map(c => {
+                                // Bereinige Text von Zeilenumbrüchen und doppelten Anführungszeichen
+                                let text = c.innerText.replace(/\n/g, ' ').replace(/"/g, '""').trim();
+                                // Entferne das Lupen-Symbol aus den Headern beim Export
+                                if (text.includes('🔍')) text = text.split('🔍')[0].trim();
+                                return `"${text}"`;
+                            })
+                            .join(';');
+                        csvContent += rowData + "\n";
+                    });
+                    csvContent += "\n\n";
+                });
+
+                // UTF-8 BOM hinzufügen, damit Excel Umlaute/Euro korrekt erkennt
+                const BOM = "\uFEFF";
+                const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Campo_Export_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (err) {
+                console.error("Export Fehler:", err);
+                alert("Export fehlgeschlagen: " + err.message);
+            }
+        }
+
+        async function deleteEntry(type, id) {
+            if(!confirm("Möchten Sie diesen Eintrag wirklich löschen?")) return;
+            
+            // Debugging: Protokolliere den Versuch
+            console.log(`Versuche Eintrag zu löschen: Tabelle=${type}, ID=${id}`);
+
+            const { error, count } = await supabaseClient
+                .from(type)
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error("Supabase Fehler:", error);
+                alert("Fehler beim Löschen: " + error.message + "\n\nHinweis: Prüfen Sie die Browser-Konsole (F12).");
+            } else {
+                // Bei Supabase bedeutet "kein Fehler" nicht automatisch "gelöscht", 
+                // wenn RLS das Löschen verhindert hat.
+                alert("Anfrage gesendet. Falls der Eintrag noch da ist, prüfen Sie bitte die 'DELETE' Policies in Supabase.");
+                loadAllData();
+            }
         }
 
         async function openSecureFile(filePath) {
@@ -293,6 +641,8 @@
                 datum: document.getElementById('datum').value,
                 kategorie: document.getElementById('kategorie').value,
                 objekt: Array.from(document.querySelectorAll('input[name="obj"]:checked')).map(c => c.value).join(', '),
+                intervall: document.getElementById('intervall').value,
+                kommentar: document.getElementById('kommentar').value,
                 bezahlt_von: document.getElementById('von').value,
                 user_id: currentUser.id
             };
@@ -344,6 +694,8 @@
                 document.getElementById('betrag').value = data.betrag;
                 document.getElementById('datum').value = data.datum;
                 document.getElementById('kategorie').value = data.kategorie;
+                document.getElementById('intervall').value = data.intervall || "Einmalig";
+                document.getElementById('kommentar').value = data.kommentar || "";
                 document.getElementById('von').value = data.bezahlt_von;
                 const objs = (data.objekt || "").split(', ');
                 document.querySelectorAll('input[name="obj"]').forEach(cb => cb.checked = objs.includes(cb.value));
