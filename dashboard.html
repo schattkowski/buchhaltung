@@ -191,7 +191,7 @@
                         </select>
                     </div>
                     <div class="full-width">
-                        <label>Objekte (Mehrfachauswahl)</label>
+                        <label>Objekte (Mehrfachauswahl) <span class="text-red-500">*</span></label>
                         <div class="checkbox-group">
                             <input type="checkbox" id="t-a" name="t-obj" value="Allgemein"><label for="t-a">Allgemein</label>
                             <input type="checkbox" id="t-h" name="t-obj" value="Haus"><label for="t-h">Haus</label>
@@ -580,10 +580,14 @@
             tbodyOnce.innerHTML = onceTasks.map(t => {
                 const isOverdue = new Date(t.faelligkeit) < new Date().setHours(0,0,0,0);
                 const prioEmoji = t.prioritaet == 3 ? "🔴" : (t.prioritaet == 2 ? "🟡" : "🟢");
+                const overdueStyle = isOverdue ? 'border-l-4 border-red-600 bg-red-50' : '';
                 return `
-                    <tr class="${isOverdue ? 'bg-red-50' : ''} cursor-pointer" onclick="showTaskDetails('${t.id}')">
+                    <tr class="${overdueStyle} cursor-pointer" onclick="showTaskDetails('${t.id}')">
                         <td onclick="event.stopPropagation()"><input type="checkbox" onclick="completeTask(event, '${t.id}')" class="w-6 h-6 cursor-pointer"></td>
-                        <td class="${isOverdue ? 'text-red-600 font-bold' : ''}">${new Date(t.faelligkeit).toLocaleDateString('de-DE')}</td>
+                        <td>
+                            <span class="${isOverdue ? 'text-red-600 font-bold' : ''}">${new Date(t.faelligkeit).toLocaleDateString('de-DE')}</span>
+                            ${isOverdue ? '<br><span class="text-[10px] bg-red-600 text-white px-1 rounded uppercase font-bold">Überfällig</span>' : ''}
+                        </td>
                         <td><b>${t.titel}</b></td>
                         <td>${t.objekt}</td>
                         <td>${t.person}</td>
@@ -599,10 +603,14 @@
             tbodyRepeat.innerHTML = repeatTasks.map(t => {
                 const isOverdue = new Date(t.faelligkeit) < new Date().setHours(0,0,0,0);
                 const prioEmoji = t.prioritaet == 3 ? "🔴" : (t.prioritaet == 2 ? "🟡" : "🟢");
+                const overdueStyle = isOverdue ? 'border-l-4 border-red-600 bg-red-50' : '';
                 return `
-                    <tr class="${isOverdue ? 'bg-red-50' : ''} cursor-pointer" onclick="showTaskDetails('${t.id}')">
+                    <tr class="${overdueStyle} cursor-pointer" onclick="showTaskDetails('${t.id}')">
                         <td onclick="event.stopPropagation()"><input type="checkbox" onclick="completeTask(event, '${t.id}')" class="w-6 h-6 cursor-pointer"></td>
-                        <td class="${isOverdue ? 'text-red-600 font-bold' : ''}">${new Date(t.faelligkeit).toLocaleDateString('de-DE')}</td>
+                        <td>
+                            <span class="${isOverdue ? 'text-red-600 font-bold' : ''}">${new Date(t.faelligkeit).toLocaleDateString('de-DE')}</span>
+                            ${isOverdue ? '<br><span class="text-[10px] bg-red-600 text-white px-1 rounded uppercase font-bold">Überfällig</span>' : ''}
+                        </td>
                         <td><b>${t.titel}</b></td>
                         <td class="text-blue-600 font-bold italic">${t.wiederholung}</td>
                         <td>${t.objekt}</td>
@@ -1136,12 +1144,19 @@
         document.getElementById('task-form').onsubmit = async (e) => {
             e.preventDefault();
             const id = document.getElementById('edit-id-tasks').value;
+            const selectedObjs = Array.from(document.querySelectorAll('input[name="t-obj"]:checked')).map(c => c.value).join(', ');
+            
+            if (!selectedObjs) {
+                alert("Bitte wählen Sie mindestens ein Objekt aus!");
+                return;
+            }
+
             const payload = {
                 titel: document.getElementById('task-title').value,
                 faelligkeit: document.getElementById('task-due').value,
                 person: document.getElementById('task-pers').value,
                 prioritaet: parseInt(document.getElementById('task-prio').value),
-                objekt: Array.from(document.querySelectorAll('input[name="t-obj"]:checked')).map(c => c.value).join(', '),
+                objekt: selectedObjs,
                 wiederholung: document.getElementById('task-repeat').value,
                 beschreibung: document.getElementById('task-desc').value,
                 user_id: currentUser.id,
