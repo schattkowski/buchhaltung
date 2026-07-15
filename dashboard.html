@@ -473,13 +473,20 @@
             if (!session) { window.location.href = 'index.html'; return; }
             currentUser = session.user;
 
-            // NEU: Admin-Status prüfen
-            const { data: roleData } = await supabaseClient
+            // Freischaltung und Rolle prüfen
+            const { data: roleData, error } = await supabaseClient
                 .from('user_roles')
-                .select('role')
+                .select('role, is_approved')
                 .eq('id', currentUser.id)
                 .single();
             
+            if (error || !roleData || !roleData.is_approved) {
+                alert("Zugriff verweigert: Dein Account ist noch nicht freigeschaltet.");
+                await supabaseClient.auth.signOut();
+                window.location.href = 'index.html';
+                return;
+            }
+
             currentUser.isAdmin = roleData?.role === 'admin';
             console.log("User eingeloggt:", currentUser.email, "Admin-Status:", currentUser.isAdmin);
 
