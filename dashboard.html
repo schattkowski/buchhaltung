@@ -58,6 +58,8 @@
                 <option value="alle">Alle Personen</option>
                 <option>Schattkowski</option>
                 <option>Ratzlaff</option>
+                <option>Ratzlaff Miri</option>
+                <option>Ratzlaff Elena</option>
                 <option>Gemeinschaft</option>
             </select>
         </div>
@@ -100,8 +102,8 @@
                             <option>Jährlich</option>
                         </select>
                     </div>
-                    <div><label>Bezahlt von</label><select id="von"><option>Schattkowski</option><option>Ratzlaff</option><option>Gemeinschaft</option></select></div>
-                    <div><label>Beleg Bild</label><input type="file" id="beleg-file" accept="image/*"></div>
+                    <div><label>Bezahlt von</label><select id="von"><option>Schattkowski</option><option>Ratzlaff</option><option>Ratzlaff Miri</option><option>Ratzlaff Elena</option><option>Gemeinschaft</option></select></div>
+                    <div><label>Beleg</label><input type="file" id="beleg-file" accept="image/*,application/pdf"></div>
                     <div class="full-width"><label>Kommentar</label><textarea id="kommentar"></textarea></div>
                 </div>
                 <button type="submit" class="submit-btn" id="btn-save-kosten">Speichern</button>
@@ -128,7 +130,7 @@
                             <input type="checkbox" id="i-4" name="i-obj" value="App4"><label for="i-4">App4</label>
                         </div>
                     </div>
-                    <div class="form-group"><label>Erhalten</label><select id="i-von"><option>Schattkowski</option><option>Ratzlaff</option><option>Gemeinschaft</option></select></div>
+                    <div class="form-group"><label>Erhalten</label><select id="i-von"><option>Schattkowski</option><option>Ratzlaff</option><option>Ratzlaff Miri</option><option>Ratzlaff Elena</option><option>Gemeinschaft</option></select></div>
                     <div class="full-width"><label>Beschreibung</label><textarea id="i-desc"></textarea></div>
                 </div>
                 <button type="submit" class="submit-btn" id="btn-save-einnahmen">Speichern</button>
@@ -144,7 +146,7 @@
                 <div class="form-grid">
                     <div class="form-group"><label>Stunden</label><input type="number" id="h-stunden" step="0.5" required></div>
                     <div class="form-group"><label>Datum</label><input type="date" id="h-datum" required></div>
-                    <div class="form-group"><label>Person</label><select id="h-pers"><option>Schattkowski</option><option>Ratzlaff</option></select></div>
+                    <div class="form-group"><label>Person</label><select id="h-pers"><option>Schattkowski</option><option>Ratzlaff</option><option>Ratzlaff Miri</option><option>Ratzlaff Elena</option></select></div>
                     <div class="full-width">
                         <label>Objekte (Mehrfachauswahl)</label>
                         <div class="checkbox-group">
@@ -211,6 +213,14 @@
                 <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
                     <h3 class="font-bold mb-2 text-center">Bezahlt von (Kosten)</h3>
                     <canvas id="chart-payer"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
+                    <h3 class="font-bold mb-2 text-center">Arbeitsstunden pro Person</h3>
+                    <canvas id="chart-hours-pers"></canvas>
+                </div>
+                <div class="bg-gray-50 p-4 rounded shadow-sm border h-80">
+                    <h3 class="font-bold mb-2 text-center">Jahresbilanz (Kosten vs. Einnahmen)</h3>
+                    <canvas id="chart-yearly-balance"></canvas>
                 </div>
             </div>
         </div>
@@ -447,6 +457,21 @@
             const kPayer = {};
             kData.forEach(d => kPayer[d.bezahlt_von] = (kPayer[d.bezahlt_von] || 0) + d.betrag);
             renderChart('chart-payer', 'doughnut', 'Anteil €', Object.keys(kPayer), Object.values(kPayer));
+
+            // 7. Stunden pro Person
+            const sPers = {};
+            sData.forEach(d => sPers[d.person] = (sPers[d.person] || 0) + d.stunden);
+            renderChart('chart-hours-pers', 'pie', 'Stunden', Object.keys(sPers), Object.values(sPers));
+
+            // 8. Jahresbilanz (Kosten vs. Einnahmen)
+            const years = [...new Set([...kData, ...eData].map(d => d.datum.substring(0,4)))].sort();
+            const yearlyE = years.map(y => eData.filter(d => d.datum.startsWith(y)).reduce((s, d) => s + d.betrag, 0));
+            const yearlyK = years.map(y => kData.filter(d => d.datum.startsWith(y)).reduce((s, d) => s + d.betrag, 0));
+
+            renderChart('chart-yearly-balance', 'bar', 'Jahresbilanz', years, null, null, [
+                { label: 'Einnahmen', data: yearlyE, backgroundColor: '#27ae60' },
+                { label: 'Kosten', data: yearlyK, backgroundColor: '#e74c3c' }
+            ]);
         }
 
         function renderChart(id, type, label, labels, data, colors, datasets = null) {
