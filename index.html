@@ -51,24 +51,46 @@
         window.onload = async () => {
             supabaseClient = supabase.createClient(SB_URL, SB_KEY);
             
-            // Falls bereits eingeloggt, direkt zum Dashboard
+            // Falls bereits eingeloggt, Status prüfen
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
-                window.location.href = 'dashboard.html';
+                await checkApprovalAndRedirect(session);
             }
 
             // Auth State überwachen (wichtig für Google Login Redirect)
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                if (session) window.location.href = 'dashboard.html';
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_IN' && session) {
+                    await checkApprovalAndRedirect(session);
+                }
             });
         };
+
+        async function checkApprovalAndRedirect(session) {
+            const { data: roleData, error } = await supabaseClient
+                .from('user_roles')
+                .select('is_approved')
+                .eq('id', session.user.id)
+                .single();
+
+            if (error || !roleData || !roleData.is_approved) {
+                alert("Dein Account wurde noch nicht vom Administrator freigeschaltet. Bitte hab ein wenig Geduld.");
+                await supabaseClient.auth.signOut();
+                return;
+            }
+            window.location.href = 'dashboard.html';
+        }
 
         async function handleLogin() {
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
             if (!email || !password) { alert("Bitte E-Mail und Passwort eingeben."); return; }
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) alert("Login fehlgeschlagen: " + error.message);
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                alert("Login fehlgeschlagen: " + error.message);
+            } else if (data.session) {
+                await checkApprovalAndRedirect(data.session);
+            }
         }
 
         async function handleSignUp() {
