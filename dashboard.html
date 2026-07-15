@@ -30,6 +30,10 @@
         th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
         th { background: #2c3e50; color: white; }
         tr:hover { background-color: #f8f9fa; }
+        /* MODAL STYLES */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 10% auto; padding: 20px; border-radius: 8px; max-width: 500px; width: 90%; position: relative; }
+        .close-modal { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body class="opacity-0 transition-opacity duration-300" id="body-content">
@@ -38,6 +42,7 @@
         <button class="nav-btn active" id="nav-form" onclick="zeigeAnsicht('form')">📝 Kosten</button>
         <button class="nav-btn" id="nav-income" onclick="zeigeAnsicht('income')">💰 Einnahmen</button>
         <button class="nav-btn" id="nav-hours" onclick="zeigeAnsicht('hours')">⏰ Stunden</button>
+        <button class="nav-btn" id="nav-tasks" onclick="zeigeAnsicht('tasks')">✅ Aufgaben</button>
         <button class="nav-btn" id="nav-overview" onclick="zeigeAnsicht('overview')">📋 Verlauf</button>
         <button class="nav-btn" id="nav-table" onclick="zeigeAnsicht('table')">📊 Analyse</button>
         <button class="nav-btn text-red-400" onclick="handleLogout()">Logout</button>
@@ -163,6 +168,108 @@
                 <button type="submit" class="submit-btn" id="btn-save-stunden">Speichern</button>
                 <button type="button" onclick="cancelEdit('stunden')" id="btn-cancel-stunden" class="hidden mt-2 text-red-500 w-full font-bold">Abbrechen</button>
             </form>
+        </div>
+
+        <!-- AUFGABEN FORMULAR & LISTE -->
+        <div id="view-tasks" class="view">
+            <h2 id="form-title-tasks" class="text-xl font-bold mb-4">Neue Aufgabe / Wartung</h2>
+            <form id="task-form" class="mb-8 p-4 bg-gray-50 border rounded">
+                <input type="hidden" id="edit-id-tasks">
+                <div class="form-grid">
+                    <div class="form-group"><label>Titel / Aufgabe</label><input type="text" id="task-title" required></div>
+                    <div class="form-group"><label>Fällig am</label><input type="date" id="task-due" required></div>
+                    <div class="form-group">
+                        <label>Zuständig</label>
+                        <select id="task-pers"><option>Schattkowski</option><option>Ratzlaff</option><option>Ratzlaff Miri</option><option>Ratzlaff Elena</option><option selected>Offen / Nicht zugewiesen</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Priorität</label>
+                        <select id="task-prio">
+                            <option value="1">🟢 Niedrig</option>
+                            <option value="2" selected>🟡 Mittel</option>
+                            <option value="3">🔴 Hoch</option>
+                        </select>
+                    </div>
+                    <div class="full-width">
+                        <label>Objekte (Mehrfachauswahl)</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="t-a" name="t-obj" value="Allgemein"><label for="t-a">Allgemein</label>
+                            <input type="checkbox" id="t-h" name="t-obj" value="Haus"><label for="t-h">Haus</label>
+                            <input type="checkbox" id="t-1" name="t-obj" value="App1"><label for="t-1">App1</label>
+                            <input type="checkbox" id="t-2" name="t-obj" value="App2"><label for="t-2">App2</label>
+                            <input type="checkbox" id="t-3" name="t-obj" value="App3"><label for="t-3">App3</label>
+                            <input type="checkbox" id="t-4" name="t-obj" value="App4"><label for="t-4">App4</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Wiederholung (Serie)</label>
+                        <select id="task-repeat">
+                            <option value="keine">Einmalig</option>
+                            <option value="monatlich">Monatlich</option>
+                            <option value="quartal">Quartalsweise</option>
+                            <option value="halbjahr">Halbjährlich</option>
+                            <option value="jahr">Jährlich</option>
+                        </select>
+                    </div>
+                    <div class="full-width"><label>Details</label><textarea id="task-desc"></textarea></div>
+                </div>
+                <button type="submit" class="submit-btn">Aufgabe speichern</button>
+                <button type="button" onclick="cancelEdit('aufgaben')" id="btn-cancel-tasks" class="hidden mt-2 text-red-500 w-full font-bold">Abbrechen</button>
+            </form>
+
+            <h3 class="font-bold mb-2">Einmalige Aufgaben</h3>
+            <div class="overflow-x-auto mb-8">
+                <table id="t-tasks-once">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Fällig<br><input type="text" onkeyup="filterTable('t-tasks-once')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Aufgabe<br><input type="text" onkeyup="filterTable('t-tasks-once')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Objekt<br><input type="text" onkeyup="filterTable('t-tasks-once')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Wer?<br><input type="text" onkeyup="filterTable('t-tasks-once')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th class="text-center">Prio</th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <h3 class="font-bold mb-2 text-blue-600">Wartungsplan (Wiederholungsaufgaben)</h3>
+            <div class="overflow-x-auto mb-8">
+                <table id="t-tasks-repeat">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Fällig<br><input type="text" onkeyup="filterTable('t-tasks-repeat')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Aufgabe<br><input type="text" onkeyup="filterTable('t-tasks-repeat')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Intervall<br><input type="text" onkeyup="filterTable('t-tasks-repeat')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Objekt<br><input type="text" onkeyup="filterTable('t-tasks-repeat')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Wer?<br><input type="text" onkeyup="filterTable('t-tasks-repeat')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th class="text-center">Prio</th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <h3 class="font-bold mb-2 text-green-600">Aufgaben-Historie (Erledigt)</h3>
+            <div class="overflow-x-auto">
+                <table id="t-tasks-done">
+                    <thead>
+                        <tr>
+                            <th>Erledigt am<br><input type="text" onkeyup="filterTable('t-tasks-done')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Aufgabe<br><input type="text" onkeyup="filterTable('t-tasks-done')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Objekt<br><input type="text" onkeyup="filterTable('t-tasks-done')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Wer?<br><input type="text" onkeyup="filterTable('t-tasks-done')" placeholder="🔍" class="text-black font-normal text-xs p-1 w-full rounded mt-1"></th>
+                            <th>Notiz / Abschluss-Info</th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- ANALYSE (Diagramme) -->
@@ -308,6 +415,53 @@
         </div>
     </div>
 
+    <!-- MODAL FÜR AUFGABEN DETAILS -->
+    <div id="task-detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 id="m-task-title" class="text-xl font-bold mb-4"></h2>
+            <div class="space-y-2">
+                <p><strong>Fällig am:</strong> <span id="m-task-due"></span></p>
+                <p><strong>Zuständig:</strong> <span id="m-task-pers"></span></p>
+                <p><strong>Objekt(e):</strong> <span id="m-task-obj"></span></p>
+                <p><strong>Priorität:</strong> <span id="m-task-prio"></span></p>
+                <p><strong>Wiederholung:</strong> <span id="m-task-repeat"></span></p>
+                <div id="m-completion-wrap" class="mt-2 p-2 bg-green-50 border border-green-200 rounded hidden">
+                    <strong>Abschluss-Info:</strong>
+                    <p id="m-task-done-note" class="italic text-green-800"></p>
+                </div>
+                <div class="mt-4 border-t pt-2">
+                    <strong>Beschreibung / Details:</strong>
+                    <p id="m-task-desc" class="whitespace-pre-wrap mt-1 text-gray-700 italic"></p>
+                </div>
+            </div>
+            <button onclick="closeModal()" class="submit-btn mt-6">Schließen</button>
+        </div>
+    </div>
+
+    <!-- MODAL FÜR AUFGABEN ABSCHLUSS -->
+    <div id="task-completion-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Aufgabe abschließen</h2>
+            <p id="c-task-title" class="font-bold text-blue-600 mb-4"></p>
+            <input type="hidden" id="c-task-id">
+            <div class="space-y-4">
+                <div class="form-group">
+                    <label>Erledigt am</label>
+                    <input type="date" id="c-task-date">
+                </div>
+                <div class="form-group">
+                    <label>Abschluss-Notiz (Was wurde getan?)</label>
+                    <textarea id="c-task-note" placeholder="Optional: Details zur Durchführung..."></textarea>
+                </div>
+            </div>
+            <div class="flex gap-2 mt-6">
+                <button onclick="confirmTaskCompletion()" class="submit-btn">Als erledigt markieren</button>
+                <button onclick="closeCompletionModal()" class="bg-gray-400 text-white px-4 py-2 rounded font-bold w-full hover:bg-gray-500 transition">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SB_URL = "https://ebhyuxpumgtxneolksur.supabase.co";
         const SB_KEY = "sb_publishable_uKfOIinQ9EdNd8wlJlXigw_tesN18hx";
@@ -402,8 +556,211 @@
             const { data: sData } = await qS;
             renderTable('t-stunden', sData, ['datum', 'person', 'objekt', 'stunden', 'beschreibung'], 'stunden');
 
+            // AUFGABEN (SUPABASE MODUS)
+            let qT = supabaseClient.from('aufgaben').select('*').order('faelligkeit', {ascending: true});
+            if(objFilter !== 'alle') qT = qT.ilike('objekt', `%${objFilter}%`);
+            if(persFilter !== 'alle') qT = qT.eq('person', persFilter);
+            const { data: tData } = await qT;
+            renderTasks(tData || []);
+
             // Charts & KPIs aktualisieren
             updateCharts(kData || [], eData || [], sData || []);
+        }
+
+        function renderTasks(data) {
+            const tbodyOnce = document.querySelector('#t-tasks-once tbody');
+            const tbodyRepeat = document.querySelector('#t-tasks-repeat tbody');
+            const tbodyDone = document.querySelector('#t-tasks-done tbody');
+            if(!tbodyOnce || !tbodyRepeat || !tbodyDone) return;
+
+            const onceTasks = data.filter(t => !t.erledigt && t.wiederholung === 'keine');
+            const repeatTasks = data.filter(t => !t.erledigt && t.wiederholung !== 'keine');
+            const doneTasks = data.filter(t => t.erledigt).sort((a,b) => new Date(b.erledigt_am) - new Date(a.erledigt_am));
+
+            tbodyOnce.innerHTML = onceTasks.map(t => {
+                const isOverdue = new Date(t.faelligkeit) < new Date().setHours(0,0,0,0);
+                const prioEmoji = t.prioritaet == 3 ? "🔴" : (t.prioritaet == 2 ? "🟡" : "🟢");
+                return `
+                    <tr class="${isOverdue ? 'bg-red-50' : ''} cursor-pointer" onclick="showTaskDetails('${t.id}')">
+                        <td onclick="event.stopPropagation()"><input type="checkbox" onclick="completeTask(event, '${t.id}')" class="w-6 h-6 cursor-pointer"></td>
+                        <td class="${isOverdue ? 'text-red-600 font-bold' : ''}">${new Date(t.faelligkeit).toLocaleDateString('de-DE')}</td>
+                        <td><b>${t.titel}</b></td>
+                        <td>${t.objekt}</td>
+                        <td>${t.person}</td>
+                        <td class="text-center text-lg">${prioEmoji}</td>
+                        <td onclick="event.stopPropagation()">
+                            <button onclick="editEntry('aufgaben', '${t.id}')" class="edit-btn">Edit</button>
+                            <button onclick="deleteEntry('aufgaben', '${t.id}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs ml-1">Löschen</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbodyRepeat.innerHTML = repeatTasks.map(t => {
+                const isOverdue = new Date(t.faelligkeit) < new Date().setHours(0,0,0,0);
+                const prioEmoji = t.prioritaet == 3 ? "🔴" : (t.prioritaet == 2 ? "🟡" : "🟢");
+                return `
+                    <tr class="${isOverdue ? 'bg-red-50' : ''} cursor-pointer" onclick="showTaskDetails('${t.id}')">
+                        <td onclick="event.stopPropagation()"><input type="checkbox" onclick="completeTask(event, '${t.id}')" class="w-6 h-6 cursor-pointer"></td>
+                        <td class="${isOverdue ? 'text-red-600 font-bold' : ''}">${new Date(t.faelligkeit).toLocaleDateString('de-DE')}</td>
+                        <td><b>${t.titel}</b></td>
+                        <td class="text-blue-600 font-bold italic">${t.wiederholung}</td>
+                        <td>${t.objekt}</td>
+                        <td>${t.person}</td>
+                        <td class="text-center text-lg">${prioEmoji}</td>
+                        <td onclick="event.stopPropagation()">
+                            <button onclick="editEntry('aufgaben', '${t.id}')" class="edit-btn">Edit</button>
+                            <button onclick="deleteEntry('aufgaben', '${t.id}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs ml-1">Löschen</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbodyDone.innerHTML = doneTasks.map(t => `
+                <tr class="opacity-60 grayscale cursor-pointer" onclick="showTaskDetails('${t.id}')">
+                    <td>${new Date(t.erledigt_am).toLocaleDateString('de-DE')}</td>
+                    <td><s>${t.titel}</s></td>
+                    <td>${t.objekt}</td>
+                    <td>${t.person}</td>
+                    <td class="text-xs italic">${t.abschluss_notiz || "-"}</td>
+                    <td onclick="event.stopPropagation()">
+                        <button onclick="reactivateTask(event, '${t.id}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs">Reaktivieren</button>
+                        <button onclick="deleteEntry('aufgaben', '${t.id}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs ml-1">Löschen</button>
+                    </td>
+                </tr>
+            `).join('');
+
+            if(onceTasks.length === 0) tbodyOnce.innerHTML = '<tr><td colspan="7" class="text-center text-gray-400 py-4">Keine einmaligen Aufgaben offen</td></tr>';
+            if(repeatTasks.length === 0) tbodyRepeat.innerHTML = '<tr><td colspan="8" class="text-center text-gray-400 py-4">Keine Wartungen im Plan</td></tr>';
+            if(doneTasks.length === 0) tbodyDone.innerHTML = '<tr><td colspan="6" class="text-center text-gray-400 py-4">Noch keine Aufgaben erledigt</td></tr>';
+        }
+
+        async function reactivateTask(event, id) {
+            if(event) event.stopPropagation();
+            if(!confirm("Aufgabe wieder als 'offen' markieren? Zukünftige offene Termine dieser Serie werden zur Korrektur entfernt.")) return;
+
+            const { data: task } = await supabaseClient.from('aufgaben').select('*').eq('id', id).single();
+            if(!task) return;
+
+            // Zukünftige offene Aufgaben derselben Serie entfernen
+            if (task.wiederholung !== 'keine') {
+                await supabaseClient.from('aufgaben').delete()
+                    .eq('titel', task.titel)
+                    .eq('objekt', task.objekt)
+                    .eq('erledigt', false);
+            }
+
+            // Aufgabe wieder öffnen
+            await supabaseClient.from('aufgaben').update({
+                erledigt: false,
+                erledigt_am: null,
+                abschluss_notiz: null
+            }).eq('id', id);
+
+            loadAllData();
+        }
+
+        async function showTaskDetails(id) {
+            const { data: t } = await supabaseClient.from('aufgaben').select('*').eq('id', id).single();
+            if(!t) return;
+
+            document.getElementById('m-task-title').innerText = t.titel;
+            document.getElementById('m-task-due').innerText = new Date(t.faelligkeit).toLocaleDateString('de-DE');
+            document.getElementById('m-task-pers').innerText = t.person;
+            document.getElementById('m-task-obj').innerText = t.objekt || "-";
+            const prioMap = { 1: "🟢 Niedrig", 2: "🟡 Mittel", 3: "🔴 Hoch" };
+            document.getElementById('m-task-prio').innerText = prioMap[t.prioritaet] || "Mittel";
+            document.getElementById('m-task-repeat').innerText = t.wiederholung === 'keine' ? 'Einmalig' : t.wiederholung;
+            document.getElementById('m-task-desc').innerText = t.beschreibung || "Keine Details hinterlegt.";
+
+            const compWrap = document.getElementById('m-completion-wrap');
+            if(t.erledigt && t.abschluss_notiz) {
+                document.getElementById('m-task-done-note').innerText = t.abschluss_notiz;
+                compWrap.classList.remove('hidden');
+            } else {
+                compWrap.classList.add('hidden');
+            }
+
+            document.getElementById('task-detail-modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('task-detail-modal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('task-detail-modal');
+            if (event.target == modal) closeModal();
+        }
+
+        async function completeTask(event, id) {
+            if(event) event.stopPropagation();
+            const { data: t } = await supabaseClient.from('aufgaben').select('*').eq('id', id).single();
+            if(!t) return;
+
+            document.getElementById('c-task-id').value = t.id;
+            document.getElementById('c-task-title').innerText = t.titel;
+            document.getElementById('c-task-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('c-task-note').value = "";
+            document.getElementById('task-completion-modal').style.display = 'block';
+        }
+
+        async function confirmTaskCompletion() {
+            const id = document.getElementById('c-task-id').value;
+            const doneDate = document.getElementById('c-task-date').value;
+            const note = document.getElementById('c-task-note').value;
+
+            const { data: task } = await supabaseClient.from('aufgaben').select('*').eq('id', id).single();
+            if (!task) return;
+
+            // Aktuelle Aufgabe als erledigt markieren
+            await supabaseClient.from('aufgaben').update({
+                erledigt: true,
+                erledigt_am: doneDate,
+                abschluss_notiz: note
+            }).eq('id', id);
+
+            // Serie? -> Nächste Aufgabe
+            if (task.wiederholung !== 'keine') {
+                const parts = task.faelligkeit.split('-');
+                let nextDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+
+                if (task.wiederholung === 'monatlich') nextDate.setMonth(nextDate.getMonth() + 1);
+                else if (task.wiederholung === 'quartal') nextDate.setMonth(nextDate.getMonth() + 3);
+                else if (task.wiederholung === 'halbjahr') nextDate.setMonth(nextDate.getMonth() + 6);
+                else if (task.wiederholung === 'jahr') nextDate.setFullYear(nextDate.getFullYear() + 1);
+
+                const y = nextDate.getFullYear();
+                const m = String(nextDate.getMonth() + 1).padStart(2, '0');
+                const d = String(nextDate.getDate()).padStart(2, '0');
+                const nextDateStr = `${y}-${m}-${d}`;
+                
+                // Prüfen, ob die Folgeaufgabe bereits existiert
+                const { data: existing } = await supabaseClient.from('aufgaben')
+                    .select('id')
+                    .eq('titel', task.titel)
+                    .eq('faelligkeit', nextDateStr)
+                    .eq('erledigt', false);
+                
+                if (!existing || existing.length === 0) {
+                    const nextTask = { ...task };
+                    delete nextTask.id;
+                    delete nextTask.created_at;
+                    nextTask.faelligkeit = nextDateStr;
+                    nextTask.erledigt = false;
+                    nextTask.erledigt_am = null;
+                    nextTask.abschluss_notiz = null;
+                    await supabaseClient.from('aufgaben').insert([nextTask]);
+                }
+            }
+
+            closeCompletionModal();
+            loadAllData();
+        }
+
+        function closeCompletionModal() {
+            document.getElementById('task-completion-modal').style.display = 'none';
+            loadAllData();
         }
 
         let charts = {};
@@ -759,8 +1116,47 @@
                 document.querySelectorAll('input[name="h-obj"]').forEach(cb => cb.checked = objs.includes(cb.value));
                 document.getElementById('form-title-stunden').innerText = "Stunden bearbeiten";
                 document.getElementById('btn-cancel-stunden').classList.remove('hidden');
+            } else if(type === 'aufgaben') {
+                zeigeAnsicht('tasks');
+                document.getElementById('edit-id-tasks').value = data.id;
+                document.getElementById('task-title').value = data.titel;
+                document.getElementById('task-due').value = data.faelligkeit;
+                document.getElementById('task-pers').value = data.person;
+                document.getElementById('task-prio').value = data.prioritaet;
+                const objs = (data.objekt || "").split(', ');
+                document.querySelectorAll('input[name="t-obj"]').forEach(cb => cb.checked = objs.includes(cb.value));
+                document.getElementById('task-repeat').value = data.wiederholung;
+                document.getElementById('task-desc').value = data.beschreibung || "";
+                document.getElementById('form-title-tasks').innerText = "Aufgabe bearbeiten";
+                document.getElementById('btn-cancel-tasks').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
+
+        document.getElementById('task-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id-tasks').value;
+            const payload = {
+                titel: document.getElementById('task-title').value,
+                faelligkeit: document.getElementById('task-due').value,
+                person: document.getElementById('task-pers').value,
+                prioritaet: parseInt(document.getElementById('task-prio').value),
+                objekt: Array.from(document.querySelectorAll('input[name="t-obj"]:checked')).map(c => c.value).join(', '),
+                wiederholung: document.getElementById('task-repeat').value,
+                beschreibung: document.getElementById('task-desc').value,
+                user_id: currentUser.id,
+                erledigt: false
+            };
+
+            const { error } = id ? await supabaseClient.from('aufgaben').update(payload).eq('id', id) : await supabaseClient.from('aufgaben').insert([payload]);
+            if(!error) { 
+                alert(id ? 'Aufgabe aktualisiert!' : 'Aufgabe angelegt!'); 
+                cancelEdit('aufgaben'); 
+                loadAllData(); 
+            } else {
+                alert("Fehler beim Speichern: " + error.message);
+            }
+        };
 
         function cancelEdit(type) {
             if(type === 'kosten') {
@@ -781,6 +1177,12 @@
                 document.getElementById('form-title-stunden').innerText = "Stunden erfassen";
                 document.getElementById('btn-cancel-stunden').classList.add('hidden');
                 document.querySelectorAll('input[name="h-obj"]').forEach(cb => cb.checked = false);
+            } else if(type === 'aufgaben') {
+                document.getElementById('task-form').reset();
+                document.getElementById('edit-id-tasks').value = "";
+                document.getElementById('form-title-tasks').innerText = "Neue Aufgabe / Wartung";
+                document.getElementById('btn-cancel-tasks').classList.add('hidden');
+                document.querySelectorAll('input[name="t-obj"]').forEach(cb => cb.checked = false);
             }
             initDate();
         }
